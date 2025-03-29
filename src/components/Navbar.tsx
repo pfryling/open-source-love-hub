@@ -1,9 +1,10 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X, LogOut, Mail, User } from "lucide-react";
+import { Heart, Menu, X, LogOut, Mail, User, LogIn } from "lucide-react";
 import { useWaitlist } from "@/contexts/WaitlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,20 +19,29 @@ import WaitlistDialog from "./WaitlistDialog";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { email, isVerified, setEmail } = useWaitlist();
+  const { email: waitlistEmail, isVerified, setEmail } = useWaitlist();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const handleWaitlistSignOut = () => {
     localStorage.removeItem("waitlist-email");
     setEmail(null);
     toast({
       title: "Signed out successfully",
     });
   };
+
+  // Determine if user has access (either authenticated or waitlist verified)
+  const hasAccess = !!user || (waitlistEmail && isVerified);
 
   return (
     <nav className="border-b shadow-sm py-4 bg-white sticky top-0 z-50">
@@ -51,36 +61,63 @@ const Navbar = () => {
               Projects
             </Link>
             
-            {email && isVerified ? (
+            {hasAccess ? (
               <>
                 <Link to="/add-project">
                   <Button variant="default" size="sm">
                     Add Project
                   </Button>
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                      <User className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>
-                      {email}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+                        <User className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>
+                        {user.email}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sign out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  // Waitlist user
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+                        <User className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>
+                        {waitlistEmail}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleWaitlistSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sign out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)}>
-                <Mail className="mr-2 h-4 w-4" />
-                Join Waitlist
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => navigate("/login")}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Join Waitlist
+                </Button>
+              </>
             )}
           </div>
 
@@ -112,7 +149,7 @@ const Navbar = () => {
               Projects
             </Link>
             
-            {email && isVerified ? (
+            {hasAccess ? (
               <>
                 <Link 
                   to="/add-project" 
@@ -123,36 +160,70 @@ const Navbar = () => {
                     Add Project
                   </Button>
                 </Link>
+                
+                {user ? (
+                  <div className="block py-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full justify-start"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out ({user.email})
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="block py-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        handleWaitlistSignOut();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full justify-start"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out ({waitlistEmail})
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
                 <div className="block py-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
+                    className="w-full justify-start"
                     onClick={() => {
-                      handleSignOut();
+                      navigate("/login");
                       setIsMenuOpen(false);
                     }}
-                    className="w-full justify-start"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out ({email})
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Button>
+                </div>
+                <div className="block py-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsDialogOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    Join Waitlist
                   </Button>
                 </div>
               </>
-            ) : (
-              <div className="block py-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => {
-                    setIsDialogOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Join Waitlist
-                </Button>
-              </div>
             )}
           </div>
         )}

@@ -18,27 +18,31 @@ export const fetchProjects = async (): Promise<Project[]> => {
   }
 };
 
-export const addProject = async (projectData: ProjectFormData): Promise<{ success: boolean; data?: Project; error?: string }> => {
+export const addProject = async (projectData: ProjectFormData, userId?: string): Promise<{ success: boolean; data?: Project; error?: string }> => {
   try {
     const tags = projectData.tags
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);
     
+    const insertData = {
+      name: projectData.name,
+      short_description: projectData.shortDescription,
+      full_description: projectData.fullDescription,
+      lovable_url: projectData.lovableUrl,
+      contact_email: projectData.contactEmail,
+      contact_discord: projectData.contactDiscord,
+      goals: projectData.goals,
+      contribution_areas: projectData.contributionAreas,
+      tags,
+      contributors_count: 1,
+      // Add user_id if available
+      ...(userId && { user_id: userId }),
+    };
+    
     const { data, error } = await supabase
       .from('projects')
-      .insert({
-        name: projectData.name,
-        short_description: projectData.shortDescription,
-        full_description: projectData.fullDescription,
-        lovable_url: projectData.lovableUrl,
-        contact_email: projectData.contactEmail,
-        contact_discord: projectData.contactDiscord,
-        goals: projectData.goals,
-        contribution_areas: projectData.contributionAreas,
-        tags,
-        contributors_count: 1,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -118,7 +122,8 @@ const formatProject = (project: any): Project => ({
   stars: project.stars,
   contributorsCount: project.contributors_count,
   lastUpdated: formatDate(project.last_updated),
-  is_demo: project.is_demo
+  is_demo: project.is_demo,
+  userId: project.user_id
 });
 
 // Format date helper
