@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProjectFormData } from "@/types/project";
 
 interface WaitlistContextType {
   email: string | null;
@@ -11,6 +12,8 @@ interface WaitlistContextType {
   verifyEmail: (token: string) => Promise<{ success: boolean; message: string }>;
   checkWaitlistStatus: (email: string) => Promise<boolean>;
   setEmail: (email: string | null) => void;
+  createProject: (project: ProjectFormData) => Promise<{ success: boolean; message: string; data?: any }>;
+  getUserProjects: () => Promise<any[]>;
 }
 
 const WaitlistContext = createContext<WaitlistContextType | undefined>(undefined);
@@ -39,19 +42,14 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
   const joinWaitlist = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       // Check if email already exists and is verified
-      const { data: existingEntries, error: fetchError } = await supabase
+      const { data: existingEntries } = await supabase
         .from("waitlist")
         .select("*")
-        .eq("email", email.toLowerCase())
-        .maybeSingle();
+        .eq("email", email);
 
-      if (fetchError) {
-        console.error("Error checking existing entries:", fetchError);
-        throw fetchError;
-      }
-
-      if (existingEntries) {
-        if (existingEntries.is_verified) {
+      if (existingEntries && existingEntries.length > 0) {
+        const entry = existingEntries[0];
+        if (entry.is_verified) {
           // Already verified
           setEmail(email);
           setIsVerified(true);
@@ -62,6 +60,10 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
           };
         } else {
           // Re-send verification
+          const { data } = await supabase.functions.invoke("verify-email", {
+            body: { email }
+          });
+          
           return { 
             success: true, 
             message: "A new verification email has been sent. Please check your inbox." 
@@ -70,35 +72,22 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Insert new entry
-      const { error: insertError } = await supabase
+      const { error } = await supabase
         .from("waitlist")
-        .insert({
-          email: email.toLowerCase()
-        });
+        .insert([{ email }]);
 
-      if (insertError) {
-        console.error("Error inserting into waitlist:", insertError);
-        throw insertError;
-      }
+      if (error) throw error;
       
       // Save email to local storage
       localStorage.setItem("waitlist-email", email);
       setEmail(email);
 
-      // In a real app, this would trigger an email with a verification link
-      // For now, let's simulate by returning the token for testing
-      const { data: tokenData, error: tokenError } = await supabase
-        .from("waitlist")
-        .select("verification_token")
-        .eq("email", email.toLowerCase())
-        .maybeSingle();
+      // Send verification email
+      const { data } = await supabase.functions.invoke("verify-email", {
+        body: { email }
+      });
 
-      if (tokenError) {
-        console.error("Error fetching verification token:", tokenError);
-        // Non-blocking error, we'll still return success
-      } else if (tokenData) {
-        console.log("Verification token for testing:", tokenData.verification_token);
-      }
+      console.log("Email verification response:", data);
 
       return { 
         success: true, 
@@ -120,7 +109,7 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
         .from("waitlist")
         .select("*")
         .eq("verification_token", token)
-        .maybeSingle();
+        .single();
 
       if (error || !data) {
         throw new Error("Invalid or expired verification token.");
@@ -129,9 +118,7 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       // Update verification status
       const { error: updateError } = await supabase
         .from("waitlist")
-        .update({
-          is_verified: true
-        })
+        .update({ is_verified: true })
         .eq("id", data.id);
 
       if (updateError) throw updateError;
@@ -156,20 +143,111 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
 
   const checkWaitlistStatus = async (email: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("waitlist")
         .select("is_verified")
-        .eq("email", email.toLowerCase())
-        .maybeSingle();
+        .eq("email", email)
+        .single();
 
-      if (error || !data) {
-        return false;
-      }
-      
-      return data.is_verified || false;
+      return data?.is_verified || false;
     } catch (error) {
       console.error("Error checking waitlist status:", error);
       return false;
+    }
+  };
+
+  // New function to create a project
+  const createProject = async (projectData: ProjectFormData): Promise<{ success: boolean; message: string; data?: any }> => {
+    try {
+      if (!email) {
+        throw new Error("You need to join the waitlist first");
+      }
+      
+      if (!isVerified) {
+        throw new Error("You need to verify your email before creating projects");
+      }
+
+      // Find waitlist user ID
+      const { data: waitlistUser } = await supabase
+        .from("waitlist")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (!waitlistUser) {
+        throw new Error("Waitlist user not found");
+      }
+
+      // Convert tags string to array
+      const tagsArray = projectData.tags.split(',').map(tag => tag.trim());
+      
+      // Insert the project into the database
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([
+          {
+            name: projectData.name,
+            short_description: projectData.shortDescription,
+            full_description: projectData.fullDescription,
+            lovable_url: projectData.lovableUrl,
+            contact_email: projectData.contactEmail,
+            contact_discord: projectData.contactDiscord,
+            goals: projectData.goals,
+            contribution_areas: projectData.contributionAreas,
+            tags: tagsArray,
+            user_id: waitlistUser.id, // Use waitlist user ID instead of auth user ID
+            contributors_count: 1,
+            is_demo: false,
+            last_updated: new Date().toISOString()
+          }
+        ]);
+      
+      if (error) throw error;
+      
+      return { 
+        success: true, 
+        message: "Project created successfully!", 
+        data 
+      };
+    } catch (error: any) {
+      console.error("Error creating project:", error);
+      return { 
+        success: false, 
+        message: error.message || "An error occurred while creating the project." 
+      };
+    }
+  };
+
+  // New function to get user projects
+  const getUserProjects = async (): Promise<any[]> => {
+    try {
+      if (!email || !isVerified) {
+        return [];
+      }
+
+      // Find waitlist user ID
+      const { data: waitlistUser } = await supabase
+        .from("waitlist")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (!waitlistUser) {
+        return [];
+      }
+
+      // Get projects for this user
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', waitlistUser.id);
+      
+      if (error) throw error;
+      
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      return [];
     }
   };
 
@@ -181,6 +259,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
     verifyEmail,
     checkWaitlistStatus,
     setEmail,
+    createProject,
+    getUserProjects
   };
 
   return <WaitlistContext.Provider value={value}>{children}</WaitlistContext.Provider>;

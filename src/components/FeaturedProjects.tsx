@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
-import { fetchProjects } from "@/services/projectService";
 
 const FeaturedProjects = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,13 +19,40 @@ const FeaturedProjects = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const getProjects = async () => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
-        const projectsData = await fetchProjects();
-        setProjects(projectsData);
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Transform the data to match our Project interface
+        const formattedProjects = data.map(project => ({
+          id: project.id,
+          name: project.name,
+          shortDescription: project.short_description,
+          fullDescription: project.full_description,
+          lovableUrl: project.lovable_url,
+          contactEmail: project.contact_email,
+          contactDiscord: project.contact_discord,
+          goals: project.goals,
+          contributionAreas: project.contribution_areas,
+          tags: project.tags,
+          stars: project.stars,
+          contributorsCount: project.contributors_count,
+          lastUpdated: formatDate(project.last_updated),
+          is_demo: project.is_demo
+        }));
+
+        setProjects(formattedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
+        // Fallback to mock data if fetch fails
         toast({
           title: "Failed to load projects",
           description: "Using demo data instead. Please try again later.",
@@ -36,8 +63,23 @@ const FeaturedProjects = () => {
       }
     };
 
-    getProjects();
+    fetchProjects();
   }, [toast]);
+
+  // Helper function to format dates
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    
+    return date.toLocaleDateString();
+  };
 
   const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -51,7 +93,8 @@ const FeaturedProjects = () => {
     setDisplayCount(prevCount => prevCount + 6);
   };
 
-  const handleVote = async (projectId: string, increment: boolean, isDemo: boolean) => {
+  const handleVote = (projectId: string, increment: boolean, isDemo: boolean) => {
+    // Don't count votes for demo projects
     if (isDemo) {
       toast({
         title: increment ? "Demo Vote Added" : "Demo Vote Removed",
@@ -60,33 +103,30 @@ const FeaturedProjects = () => {
       return true;
     }
     
-    if (increment) {
-      const success = await addVote(projectId);
-      if (success) {
-        const project = projects.find(p => p.id === projectId);
+    const success = increment ? addVote(projectId) : removeVote(projectId);
+    
+    if (success) {
+      const project = projects.find(p => p.id === projectId);
+      if (increment) {
         toast({
           title: "Vote Added",
           description: `You've voted for ${project?.name}. You have ${remainingVotes - 1} votes remaining.`,
         });
-      } else if (remainingVotes <= 0) {
-        toast({
-          title: "No Votes Remaining",
-          description: "You've used all your available votes. Remove votes from other projects to vote again.",
-          variant: "destructive"
-        });
-      }
-      return success;
-    } else {
-      const success = await removeVote(projectId);
-      if (success) {
-        const project = projects.find(p => p.id === projectId);
+      } else {
         toast({
           title: "Vote Removed",
           description: `You've removed your vote from ${project?.name}. You now have ${remainingVotes + 1} votes remaining.`,
         });
       }
-      return success;
+    } else if (increment && remainingVotes <= 0) {
+      toast({
+        title: "No Votes Remaining",
+        description: "You've used all your available votes. Remove votes from other projects to vote again.",
+        variant: "destructive"
+      });
     }
+    
+    return success;
   };
 
   return (

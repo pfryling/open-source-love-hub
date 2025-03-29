@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +14,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { ProjectFormData } from "@/types/project";
-import { supabase } from "@/integrations/supabase/client";
+import { useWaitlist } from "@/contexts/WaitlistContext";
 
 interface ProjectFormProps {
   onSubmit?: (data: ProjectFormData) => void;
@@ -25,6 +24,7 @@ interface ProjectFormProps {
 const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { createProject } = useWaitlist();
   
   const [formData, setFormData] = useState<ProjectFormData>({
     name: "",
@@ -114,29 +114,11 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
       setSubmitting(true);
       
       try {
-        // Convert tags string to array
-        const tagsArray = formData.tags.split(',').map(tag => tag.trim());
+        // Use the createProject function from the waitlist context
+        const result = await createProject(formData);
         
-        // Insert the project into the database with object format
-        const { data, error } = await supabase
-          .from('projects')
-          .insert({
-            name: formData.name,
-            short_description: formData.shortDescription,
-            full_description: formData.fullDescription,
-            lovable_url: formData.lovableUrl,
-            contact_email: formData.contactEmail,
-            contact_discord: formData.contactDiscord,
-            goals: formData.goals,
-            contribution_areas: formData.contributionAreas,
-            tags: tagsArray,
-            contributors_count: 1,
-            is_demo: false
-          })
-          .select();
-        
-        if (error) {
-          throw error;
+        if (!result.success) {
+          throw new Error(result.message);
         }
         
         // Call the onSubmit prop if provided

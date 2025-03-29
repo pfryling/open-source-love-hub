@@ -16,7 +16,7 @@ import {
 interface ProjectCardProps {
   project: Project;
   voteCount: number;
-  onVote: (increment: boolean) => void | Promise<void> | Promise<boolean>;
+  onVote: (increment: boolean) => boolean;
   remainingVotes: number;
 }
 
@@ -89,10 +89,12 @@ const ProjectCard = ({
       </CardContent>
       <CardFooter className="pt-2">
         <div className="flex justify-between w-full">
-          <Button variant="ghost" size="sm" className="text-primary">
-            <GitFork className="mr-2 h-4 w-4" />
-            View Details
-          </Button>
+          <Link to={`/projects/${project.id}`} className="w-full">
+            <Button variant="ghost" size="sm" className="text-primary">
+              <GitFork className="mr-2 h-4 w-4" />
+              View Details
+            </Button>
+          </Link>
           <Link to={`/projects/${project.id}`}>
             <Button variant="outline" size="sm">Contribute</Button>
           </Link>

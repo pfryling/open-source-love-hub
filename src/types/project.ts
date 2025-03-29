@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -14,7 +15,6 @@ export interface Project {
   lastUpdated: string;
   features?: ProjectFeature[];
   is_demo?: boolean;
-  userId?: string;
 }
 
 export interface ProjectFeature {

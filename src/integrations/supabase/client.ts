@@ -10,38 +10,21 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storageKey: 'supabase-auth',
-    storage: {
-      getItem: (key) => {
-        try {
-          const value = localStorage.getItem(key);
-          return value;
-        } catch (error) {
-          console.error('Error accessing localStorage:', error);
-          return null;
-        }
-      },
-      setItem: (key, value) => {
-        try {
-          localStorage.setItem(key, value);
-        } catch (error) {
-          console.error('Error setting localStorage item:', error);
-        }
-      },
-      removeItem: (key) => {
-        try {
-          localStorage.removeItem(key);
-        } catch (error) {
-          console.error('Error removing localStorage item:', error);
-        }
-      }
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      'x-app-name': 'lovable-hub',
     },
   },
-  // Fix for SecurityError: LockManager.request: request() is not allowed in this context
-  global: {
-    fetch: (url: RequestInfo | URL, options?: RequestInit) => fetch(url, options)
-  }
 });
+
+// Helper functions for vote operations
+export const incrementVotes = (table: string, id: string) => {
+  return supabase.from(table).update({ votes: supabase.rpc('increment', { x: 'votes' }) }).eq('id', id);
+};
+
+export const decrementVotes = (table: string, id: string) => {
+  return supabase.from(table).update({ votes: supabase.rpc('decrement', { x: 'votes' }) }).eq('id', id);
+};

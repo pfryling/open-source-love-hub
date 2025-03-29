@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 // Constants
 export const MAX_VOTES = 5;
@@ -34,53 +33,41 @@ export const useVotes = () => {
   }, [votes]);
 
   // Add a vote to a project
-  const addVote = async (projectId: string) => {
+  const addVote = (projectId: string) => {
     if (remainingVotes <= 0) return false;
     
-    try {
-      // Update local state
-      setVotes(prevVotes => {
-        const newVotes = { 
-          ...prevVotes, 
-          [projectId]: (prevVotes[projectId] || 0) + 1 
-        };
-        saveVotes(newVotes);
-        return newVotes;
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Error adding vote:', error);
-      return false;
-    }
+    setVotes(prevVotes => {
+      const newVotes = { 
+        ...prevVotes, 
+        [projectId]: (prevVotes[projectId] || 0) + 1 
+      };
+      saveVotes(newVotes);
+      return newVotes;
+    });
+    
+    return true;
   };
 
   // Remove a vote from a project
-  const removeVote = async (projectId: string) => {
+  const removeVote = (projectId: string) => {
     if (!votes[projectId] || votes[projectId] <= 0) return false;
     
-    try {
-      // Update local state
-      setVotes(prevVotes => {
-        const newVotes = { 
-          ...prevVotes, 
-          [projectId]: prevVotes[projectId] - 1 
-        };
-        
-        // Remove project from votes object if count is 0
-        if (newVotes[projectId] === 0) {
-          delete newVotes[projectId];
-        }
-        
-        saveVotes(newVotes);
-        return newVotes;
-      });
+    setVotes(prevVotes => {
+      const newVotes = { 
+        ...prevVotes, 
+        [projectId]: prevVotes[projectId] - 1 
+      };
       
-      return true;
-    } catch (error) {
-      console.error('Error removing vote:', error);
-      return false;
-    }
+      // Remove project from votes object if count is 0
+      if (newVotes[projectId] === 0) {
+        delete newVotes[projectId];
+      }
+      
+      saveVotes(newVotes);
+      return newVotes;
+    });
+    
+    return true;
   };
 
   return { votes, remainingVotes, addVote, removeVote };

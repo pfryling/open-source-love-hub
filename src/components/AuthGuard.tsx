@@ -1,8 +1,6 @@
-
 import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWaitlist } from "@/contexts/WaitlistContext";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,23 +9,19 @@ interface AuthGuardProps {
 }
 
 const AuthGuard = ({ children, requireAuth = false, fallback }: AuthGuardProps) => {
-  const { user, loading: authLoading } = useAuth();
-  const { email, isVerified, loading: waitlistLoading } = useWaitlist();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const loading = authLoading || waitlistLoading;
-  const isAuthenticated = !!user || (email && isVerified);
 
   useEffect(() => {
     if (!loading) {
-      if (requireAuth && !isAuthenticated) {
+      if (requireAuth && !user) {
         // Save the location they were trying to go to 
         // when they were redirected to the login page
-        navigate("/login", { state: { from: location } });
+        navigate("/auth", { state: { from: location } });
       }
     }
-  }, [user, isAuthenticated, loading, requireAuth, navigate, location]);
+  }, [user, loading, requireAuth, navigate, location]);
 
   // Show loading state while checking auth
   if (loading) {
@@ -39,7 +33,7 @@ const AuthGuard = ({ children, requireAuth = false, fallback }: AuthGuardProps) 
   }
 
   // If not loading, and we don't require auth, or we do require auth and have a user
-  if (!requireAuth || (requireAuth && isAuthenticated)) {
+  if (!requireAuth || (requireAuth && user)) {
     return <>{children}</>;
   }
 
