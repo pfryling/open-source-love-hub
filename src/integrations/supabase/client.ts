@@ -18,6 +18,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       'x-app-name': 'lovable-hub',
     },
   },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
 });
 
 // Helper functions for vote operations
