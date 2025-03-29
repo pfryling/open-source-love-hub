@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 interface VoteCounterProps {
   projectId: string;
   voteCount: number;
-  onVote: (increment: boolean) => boolean;
+  onVote: (increment: boolean) => void | Promise<void> | Promise<boolean>;
   remainingVotes: number;
   isDemo?: boolean;
 }
@@ -31,14 +31,19 @@ const VoteCounter = ({
   const { email, isVerified } = useWaitlist();
   const isAuthenticated = email && isVerified;
 
-  const handleVote = (increment: boolean) => {
+  const handleVote = async (increment: boolean) => {
     if (!isAuthenticated) return;
     
-    const success = onVote(increment);
-    
-    if (success) {
-      setAnimateCount(true);
-      setTimeout(() => setAnimateCount(false), 300);
+    try {
+      const result = await onVote(increment);
+      
+      // Only animate if vote was successful
+      if (result !== false) {
+        setAnimateCount(true);
+        setTimeout(() => setAnimateCount(false), 300);
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
     }
   };
 

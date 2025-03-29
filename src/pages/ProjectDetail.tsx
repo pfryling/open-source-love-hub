@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,10 @@ const featureSchema = z.object({
     .max(500, { message: "Description must not exceed 500 characters" }),
 });
 
+// Define valid status types
+type FeatureStatus = "suggested" | "planned" | "in-progress" | "completed";
+type TabType = "all" | FeatureStatus;
+
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -57,9 +62,7 @@ const ProjectDetail = () => {
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [features, setFeatures] = useState<ProjectFeature[]>([]);
-  const [activeTab, setActiveTab] = useState<
-    "all" | "suggested" | "planned" | "in-progress" | "completed"
-  >("all");
+  const [activeTab, setActiveTab] = useState<TabType>("all");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [remainingVotes, setRemainingVotes] = useState<number>(3); // Example: User has 3 votes
   const [projectVotes, setProjectVotes] = useState<{ [projectId: string]: number }>({});
@@ -125,7 +128,7 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleVoteOnFeature = async (featureId: string, increment: boolean) => {
+  const handleVoteOnFeature = async (featureId: string, increment: boolean): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -232,7 +235,7 @@ const ProjectDetail = () => {
             name: feature.name,
             description: feature.description,
             votes: feature.votes || 0,
-            status: (feature.status as "planned" | "in-progress" | "completed" | "suggested") || "suggested"
+            status: (feature.status as FeatureStatus) || "suggested"
           }));
           
           setFeatures(formattedFeatures);
@@ -271,7 +274,7 @@ const ProjectDetail = () => {
         name: data.featureName,
         description: data.featureDescription,
         votes: 1, // Start with 1 vote (the suggester's vote)
-        status: "suggested" as const,
+        status: "suggested" as FeatureStatus,
         project_id: project.id
       };
       
@@ -293,7 +296,7 @@ const ProjectDetail = () => {
         name: insertedFeature.name,
         description: insertedFeature.description,
         votes: insertedFeature.votes || 1,
-        status: (insertedFeature.status as "suggested" | "planned" | "in-progress" | "completed") || "suggested"
+        status: (insertedFeature.status as FeatureStatus) || "suggested"
       };
       
       setFeatures(prev => [...prev, formattedFeature]);
@@ -342,7 +345,7 @@ const ProjectDetail = () => {
               <div className="flex items-center">
                 <VoteCounter
                   projectId={project.id}
-                  voteCount={projectVotes[project.id] || 0}
+                  voteCount={projectVotes[project.id] || project.votes || 0}
                   onVote={handleVoteOnProject}
                   remainingVotes={remainingVotes}
                   isDemo={project.is_demo}
@@ -542,7 +545,7 @@ const ProjectDetail = () => {
                 <Tabs
                   defaultValue="all"
                   value={activeTab}
-                  onValueChange={setActiveTab}
+                  onValueChange={(value) => setActiveTab(value as TabType)}
                 >
                   <TabsList>
                     <TabsTrigger value="all">All Features</TabsTrigger>
