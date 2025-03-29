@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 interface VoteCounterProps {
   projectId: string;
   voteCount: number;
-  onVote: (increment: boolean) => boolean;
+  onVote: (increment: boolean) => void | Promise<void> | Promise<boolean>;
   remainingVotes: number;
   isDemo?: boolean;
 }
@@ -34,12 +34,10 @@ const VoteCounter = ({
   const handleVote = (increment: boolean) => {
     if (!isAuthenticated) return;
     
-    const success = onVote(increment);
+    onVote(increment);
     
-    if (success) {
-      setAnimateCount(true);
-      setTimeout(() => setAnimateCount(false), 300);
-    }
+    setAnimateCount(true);
+    setTimeout(() => setAnimateCount(false), 300);
   };
 
   return (

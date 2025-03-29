@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +67,7 @@ const ProjectDetail = () => {
     );
   }
 
-  const handleVoteOnFeature = (featureId: string, increment: boolean) => {
+  const handleVoteOnFeature = async (featureId: string, increment: boolean) => {
     setFeatures(prev => 
       prev.map(feature => 
         feature.id === featureId 
@@ -81,35 +80,34 @@ const ProjectDetail = () => {
       title: increment ? "Vote added" : "Vote removed",
       description: `Your vote for this feature has been ${increment ? "added" : "removed"}.`,
     });
-    
-    return true;
   };
 
-  const handleVoteOnProject = (increment: boolean) => {
+  const handleVoteOnProject = async (increment: boolean) => {
     const projectId = project.id;
-    const success = increment ? addVote(projectId) : removeVote(projectId);
     
-    if (success) {
-      if (increment) {
+    if (increment) {
+      const success = await addVote(projectId);
+      if (success) {
         toast({
           title: "Vote Added",
           description: `You've voted for ${project.name}. You have ${remainingVotes - 1} votes remaining.`,
         });
-      } else {
+      } else if (remainingVotes <= 0) {
+        toast({
+          title: "No Votes Remaining",
+          description: "You've used all your available votes. Remove votes from other projects to vote again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      const success = await removeVote(projectId);
+      if (success) {
         toast({
           title: "Vote Removed",
           description: `You've removed your vote from ${project.name}. You now have ${remainingVotes + 1} votes remaining.`,
         });
       }
-    } else if (increment && remainingVotes <= 0) {
-      toast({
-        title: "No Votes Remaining",
-        description: "You've used all your available votes. Remove votes from other projects to vote again.",
-        variant: "destructive"
-      });
     }
-    
-    return success;
   };
 
   const onSubmitFeature = (data: any) => {
@@ -117,7 +115,7 @@ const ProjectDetail = () => {
       id: `feature-${Date.now()}`,
       name: data.featureName,
       description: data.featureDescription,
-      votes: 1, // Start with 1 vote (the suggester's vote)
+      votes: 1,
       status: "suggested"
     };
     
@@ -130,7 +128,7 @@ const ProjectDetail = () => {
       description: "Your feature suggestion has been added with an initial vote from you.",
     });
   };
-  
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
       <Link to="/projects" className="inline-flex items-center text-gray-600 hover:text-primary mb-6">

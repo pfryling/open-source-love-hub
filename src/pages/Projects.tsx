@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,10 @@ const Projects = () => {
   const { votes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
   
-  // Extract unique tags from all projects
   const allTags = Array.from(
     new Set(mockProjects.flatMap(project => project.tags))
   ).sort();
   
-  // Filter projects based on search query and selected tags
   const filteredProjects = mockProjects.filter(project => {
     const matchesSearch = 
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -36,14 +33,12 @@ const Projects = () => {
     return matchesSearch && matchesTags;
   });
   
-  // Sort projects based on selected sort method
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     if (sortBy === "stars") {
       return (b.stars || 0) - (a.stars || 0);
     } else if (sortBy === "contributors") {
       return b.contributorsCount - a.contributorsCount;
     } else {
-      // Default sort by newest (last updated)
       return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
     }
   });
@@ -56,31 +51,34 @@ const Projects = () => {
     }
   };
   
-  const handleVote = (projectId: string, increment: boolean) => {
-    const success = increment ? addVote(projectId) : removeVote(projectId);
-    
-    if (success) {
-      const project = mockProjects.find(p => p.id === projectId);
-      if (increment) {
+  const handleVote = async (projectId: string, increment: boolean) => {
+    if (increment) {
+      const success = await addVote(projectId);
+      if (success) {
+        const project = mockProjects.find(p => p.id === projectId);
         toast({
           title: "Vote Added",
           description: `You've voted for ${project?.name}. You have ${remainingVotes - 1} votes remaining.`,
         });
-      } else {
+      } else if (remainingVotes <= 0) {
+        toast({
+          title: "No Votes Remaining",
+          description: "You've used all your available votes. Remove votes from other projects to vote again.",
+          variant: "destructive"
+        });
+      }
+      return;
+    } else {
+      const success = await removeVote(projectId);
+      if (success) {
+        const project = mockProjects.find(p => p.id === projectId);
         toast({
           title: "Vote Removed",
           description: `You've removed your vote from ${project?.name}. You now have ${remainingVotes + 1} votes remaining.`,
         });
       }
-    } else if (increment && remainingVotes <= 0) {
-      toast({
-        title: "No Votes Remaining",
-        description: "You've used all your available votes. Remove votes from other projects to vote again.",
-        variant: "destructive"
-      });
+      return;
     }
-    
-    return success;
   };
   
   return (
