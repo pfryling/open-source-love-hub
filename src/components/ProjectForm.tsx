@@ -117,10 +117,10 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         // Convert tags string to array
         const tagsArray = formData.tags.split(',').map(tag => tag.trim());
         
-        // Insert the project into the database with array format
+        // Insert the project into the database with object format
         const { data, error } = await supabase
           .from('projects')
-          .insert([{
+          .insert({
             name: formData.name,
             short_description: formData.shortDescription,
             full_description: formData.fullDescription,
@@ -132,7 +132,7 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
             tags: tagsArray,
             contributors_count: 1,
             is_demo: false
-          }])
+          })
           .select();
         
         if (error) {

@@ -42,16 +42,16 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       const { data: existingEntries, error: fetchError } = await supabase
         .from("waitlist")
         .select("*")
-        .eq("email", email.toLowerCase());
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
 
       if (fetchError) {
         console.error("Error checking existing entries:", fetchError);
         throw fetchError;
       }
 
-      if (existingEntries && existingEntries.length > 0) {
-        const entry = existingEntries[0];
-        if (entry.is_verified) {
+      if (existingEntries) {
+        if (existingEntries.is_verified) {
           // Already verified
           setEmail(email);
           setIsVerified(true);
@@ -72,7 +72,9 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       // Insert new entry
       const { error: insertError } = await supabase
         .from("waitlist")
-        .insert([{ email: email.toLowerCase() }]);
+        .insert({
+          email: email.toLowerCase()
+        });
 
       if (insertError) {
         console.error("Error inserting into waitlist:", insertError);
@@ -88,13 +90,14 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       const { data: tokenData, error: tokenError } = await supabase
         .from("waitlist")
         .select("verification_token")
-        .eq("email", email.toLowerCase());
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
 
       if (tokenError) {
         console.error("Error fetching verification token:", tokenError);
         // Non-blocking error, we'll still return success
-      } else if (tokenData && tokenData.length > 0) {
-        console.log("Verification token for testing:", tokenData[0].verification_token);
+      } else if (tokenData) {
+        console.log("Verification token for testing:", tokenData.verification_token);
       }
 
       return { 
@@ -116,26 +119,27 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from("waitlist")
         .select("*")
-        .eq("verification_token", token);
+        .eq("verification_token", token)
+        .maybeSingle();
 
-      if (error || !data || data.length === 0) {
+      if (error || !data) {
         throw new Error("Invalid or expired verification token.");
       }
-
-      const entry = data[0];
 
       // Update verification status
       const { error: updateError } = await supabase
         .from("waitlist")
-        .update([{ is_verified: true }])
-        .eq("id", entry.id);
+        .update({
+          is_verified: true
+        })
+        .eq("id", data.id);
 
       if (updateError) throw updateError;
 
       // Update local state
-      setEmail(entry.email);
+      setEmail(data.email);
       setIsVerified(true);
-      localStorage.setItem("waitlist-email", entry.email);
+      localStorage.setItem("waitlist-email", data.email);
 
       return { 
         success: true, 
@@ -155,13 +159,14 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from("waitlist")
         .select("is_verified")
-        .eq("email", email.toLowerCase());
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
 
-      if (error || !data || data.length === 0) {
+      if (error || !data) {
         return false;
       }
       
-      return data[0]?.is_verified || false;
+      return data.is_verified || false;
     } catch (error) {
       console.error("Error checking waitlist status:", error);
       return false;

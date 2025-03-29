@@ -25,22 +25,20 @@ export const addProject = async (projectData: ProjectFormData, userId?: string):
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);
     
-    const insertData = [
-      {
-        name: projectData.name,
-        short_description: projectData.shortDescription,
-        full_description: projectData.fullDescription,
-        lovable_url: projectData.lovableUrl,
-        contact_email: projectData.contactEmail,
-        contact_discord: projectData.contactDiscord,
-        goals: projectData.goals,
-        contribution_areas: projectData.contributionAreas,
-        tags,
-        contributors_count: 1,
-        // Add user_id if available
-        ...(userId ? { user_id: userId } : {}),
-      }
-    ];
+    const insertData = {
+      name: projectData.name,
+      short_description: projectData.shortDescription,
+      full_description: projectData.fullDescription,
+      lovable_url: projectData.lovableUrl,
+      contact_email: projectData.contactEmail,
+      contact_discord: projectData.contactDiscord,
+      goals: projectData.goals,
+      contribution_areas: projectData.contributionAreas,
+      tags,
+      contributors_count: 1,
+      // Add user_id if available
+      ...(userId ? { user_id: userId } : {})
+    };
     
     const { data, error } = await supabase
       .from('projects')
@@ -82,7 +80,7 @@ export const updateProject = async (id: string, projectData: Partial<ProjectForm
     
     const { data, error } = await supabase
       .from('projects')
-      .update([updateData])
+      .update(updateData)
       .eq('id', id)
       .select();
 
