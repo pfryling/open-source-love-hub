@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import AddProject from "./pages/AddProject";
+import MyProjects from "./pages/MyProjects";
 import Verify from "./pages/Verify";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -43,6 +44,12 @@ const App = () => (
                     >
                       <AddProject />
                     </WaitlistGuard>
+                  } 
+                />
+                <Route 
+                  path="/my-projects" 
+                  element={
+                    <MyProjects />
                   } 
                 />
                 <Route path="/verify" element={<Verify />} />

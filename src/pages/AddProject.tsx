@@ -2,20 +2,39 @@
 import { useToast } from "@/components/ui/use-toast";
 import ProjectForm from "@/components/ProjectForm";
 import { ProjectFormData } from "@/types/project";
+import { useWaitlist } from "@/contexts/WaitlistContext";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AddProject = () => {
   const { toast } = useToast();
+  const { isVerified, loading } = useWaitlist();
+  const navigate = useNavigate();
+  
+  // Redirect if user is not verified
+  useEffect(() => {
+    if (!loading && !isVerified) {
+      toast({
+        title: "Verification required",
+        description: "You need to verify your email before adding projects.",
+        variant: "destructive"
+      });
+      navigate("/");
+    }
+  }, [isVerified, loading, navigate, toast]);
   
   const handleSubmit = (data: ProjectFormData) => {
-    // In a real app, you would send this data to an API
+    // This will be handled in the ProjectForm component now
     console.log("Form submitted:", data);
-    
-    // Show success toast
-    toast({
-      title: "Project submitted successfully!",
-      description: "Your project has been added to our database and will be reviewed soon.",
-    });
   };
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X, LogOut, Mail, User } from "lucide-react";
+import { Heart, Menu, X, LogOut, Mail, User, FolderPlus } from "lucide-react";
 import { useWaitlist } from "@/contexts/WaitlistContext";
 import {
   DropdownMenu,
@@ -53,6 +53,9 @@ const Navbar = () => {
             
             {email && isVerified ? (
               <>
+                <Link to="/my-projects" className="text-gray-700 hover:text-primary transition-colors">
+                  My Projects
+                </Link>
                 <Link to="/add-project">
                   <Button variant="default" size="sm">
                     Add Project
@@ -69,6 +72,10 @@ const Navbar = () => {
                       {email}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => window.location.href = "/my-projects"}>
+                      <FolderPlus className="mr-2 h-4 w-4" />
+                      <span>My Projects</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
@@ -114,6 +121,13 @@ const Navbar = () => {
             
             {email && isVerified ? (
               <>
+                <Link 
+                  to="/my-projects" 
+                  className="block text-gray-700 hover:text-primary transition-colors py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Projects
+                </Link>
                 <Link 
                   to="/add-project" 
                   className="block py-2"
