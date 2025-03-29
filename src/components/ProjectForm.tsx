@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -76,8 +77,8 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
     
     if (!formData.lovableUrl.trim()) {
       newErrors.lovableUrl = "Lovable URL is required";
-    } else if (!formData.lovableUrl.includes("lovable.dev")) {
-      newErrors.lovableUrl = "URL must be a valid Lovable project URL";
+    } else if (!formData.lovableUrl.includes("lovable.dev") && !formData.lovableUrl.includes("lovable.app")) {
+      newErrors.lovableUrl = "URL must be a valid Lovable project URL (lovable.dev or lovable.app)";
     }
     
     if (!formData.contactEmail.trim() && !formData.contactDiscord.trim()) {
