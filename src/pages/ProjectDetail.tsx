@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,27 +23,123 @@ import {
   Target, 
   HandHelping,
   Plus,
-  ThumbsUp
+  ThumbsUp,
+  Loader2
 } from "lucide-react";
 import { mockProjects } from "@/data/mockProjects";
-import { ProjectFeature } from "@/types/project";
+import { ProjectFeature, Project } from "@/types/project";
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
 import VoteCounter from "@/components/VoteCounter";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const project = mockProjects.find(p => p.id === id);
-  const [features, setFeatures] = useState<ProjectFeature[]>(
-    project?.features || [
-      { id: "1", name: "User Authentication", description: "Add user login and registration", votes: 12, status: "in-progress" },
-      { id: "2", name: "Dark Mode Support", description: "Add dark mode toggle to UI", votes: 8, status: "planned" },
-      { id: "3", name: "Mobile Responsive Design", description: "Make the application fully responsive for all device sizes", votes: 15, status: "completed" }
-    ]
-  );
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [features, setFeatures] = useState<ProjectFeature[]>([]);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const { votes: projectVotes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch project from Supabase
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (projectError) {
+          console.error('Error fetching project:', projectError);
+          // Try to fallback to mock data
+          const mockProject = mockProjects.find(p => p.id === id);
+          if (mockProject) {
+            setProject(mockProject);
+            setFeatures(mockProject.features || []);
+          } else {
+            throw projectError;
+          }
+          return;
+        }
+        
+        // Format the project data to match our Project interface
+        const formattedProject: Project = {
+          id: projectData.id,
+          name: projectData.name,
+          shortDescription: projectData.short_description,
+          fullDescription: projectData.full_description,
+          lovableUrl: projectData.lovable_url,
+          contactEmail: projectData.contact_email,
+          contactDiscord: projectData.contact_discord,
+          goals: projectData.goals,
+          contributionAreas: projectData.contribution_areas,
+          tags: projectData.tags || [],
+          stars: projectData.stars,
+          contributorsCount: projectData.contributors_count,
+          lastUpdated: formatDate(projectData.last_updated),
+          is_demo: projectData.is_demo
+        };
+        
+        setProject(formattedProject);
+        
+        // Fetch project features
+        const { data: featureData, error: featureError } = await supabase
+          .from('project_features')
+          .select('*')
+          .eq('project_id', id);
+          
+        if (featureError) {
+          console.error('Error fetching features:', featureError);
+          setFeatures([]);
+        } else {
+          const formattedFeatures: ProjectFeature[] = featureData.map(feature => ({
+            id: feature.id,
+            name: feature.name,
+            description: feature.description,
+            votes: feature.votes || 0,
+            status: feature.status || 'suggested'
+          }));
+          
+          setFeatures(formattedFeatures);
+        }
+      } catch (error) {
+        console.error('Error loading project details:', error);
+        toast({
+          title: "Error Loading Project",
+          description: "Could not load the project details. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchProject();
+    }
+  }, [id, toast]);
+
+  // Helper function to format dates
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Recently';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    
+    return date.toLocaleDateString();
+  };
 
   const form = useForm({
     defaultValues: {
@@ -52,6 +148,17 @@ const ProjectDetail = () => {
       agreeToContribute: false
     }
   });
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-lg text-gray-600">Loading project details...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!project) {
     return (
@@ -68,21 +175,53 @@ const ProjectDetail = () => {
     );
   }
 
-  const handleVoteOnFeature = (featureId: string, increment: boolean) => {
-    setFeatures(prev => 
-      prev.map(feature => 
-        feature.id === featureId 
-          ? { ...feature, votes: feature.votes + (increment ? 1 : -1) } 
-          : feature
-      )
-    );
-
-    toast({
-      title: increment ? "Vote added" : "Vote removed",
-      description: `Your vote for this feature has been ${increment ? "added" : "removed"}.`,
-    });
-    
-    return true;
+  const handleVoteOnFeature = async (featureId: string, increment: boolean) => {
+    try {
+      // First update the UI optimistically
+      setFeatures(prev => 
+        prev.map(feature => 
+          feature.id === featureId 
+            ? { ...feature, votes: feature.votes + (increment ? 1 : -1) } 
+            : feature
+        )
+      );
+      
+      // Then update the database
+      const { error } = await supabase
+        .from('project_features')
+        .update({ votes: increment ? supabase.rpc('increment', { x: 1 }) : supabase.rpc('decrement', { x: 1 }) })
+        .eq('id', featureId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: increment ? "Vote added" : "Vote removed",
+        description: `Your vote for this feature has been ${increment ? "added" : "removed"}.`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating feature vote:', error);
+      
+      // Revert the optimistic update
+      setFeatures(prev => 
+        prev.map(feature => 
+          feature.id === featureId 
+            ? { ...feature, votes: feature.votes + (increment ? -1 : 1) } 
+            : feature
+        )
+      );
+      
+      toast({
+        title: "Error",
+        description: "Failed to update vote. Please try again.",
+        variant: "destructive"
+      });
+      
+      return false;
+    }
   };
 
   const handleVoteOnProject = (increment: boolean) => {
@@ -112,23 +251,53 @@ const ProjectDetail = () => {
     return success;
   };
 
-  const onSubmitFeature = (data: any) => {
-    const newFeature: ProjectFeature = {
-      id: `feature-${Date.now()}`,
-      name: data.featureName,
-      description: data.featureDescription,
-      votes: 1, // Start with 1 vote (the suggester's vote)
-      status: "suggested"
-    };
-    
-    setFeatures(prev => [...prev, newFeature]);
-    form.reset();
-    setShowSuggestionForm(false);
-    
-    toast({
-      title: "Feature Suggested",
-      description: "Your feature suggestion has been added with an initial vote from you.",
-    });
+  const onSubmitFeature = async (data: any) => {
+    try {
+      // Create new feature object
+      const newFeature: Omit<ProjectFeature, 'id'> & { project_id: string } = {
+        name: data.featureName,
+        description: data.featureDescription,
+        votes: 1, // Start with 1 vote (the suggester's vote)
+        status: "suggested",
+        project_id: project.id
+      };
+      
+      // Insert the feature into Supabase
+      const { data: insertedFeature, error } = await supabase
+        .from('project_features')
+        .insert(newFeature)
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Add the feature to the local state
+      const formattedFeature: ProjectFeature = {
+        id: insertedFeature.id,
+        name: insertedFeature.name,
+        description: insertedFeature.description,
+        votes: insertedFeature.votes || 1,
+        status: insertedFeature.status || 'suggested'
+      };
+      
+      setFeatures(prev => [...prev, formattedFeature]);
+      form.reset();
+      setShowSuggestionForm(false);
+      
+      toast({
+        title: "Feature Suggested",
+        description: "Your feature suggestion has been added with an initial vote from you.",
+      });
+    } catch (error) {
+      console.error('Error adding feature:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add feature suggestion. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
