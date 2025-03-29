@@ -187,15 +187,38 @@ const ProjectDetail = () => {
       );
       
       // Then update the database
-      const { error } = await supabase
-        .from('project_features')
-        .update({ 
-          votes: increment 
-            ? supabase.rpc('increment', { x: 'votes' }) 
-            : supabase.rpc('decrement', { x: 'votes' }) 
-        })
-        .eq('id', featureId);
+      let error;
+      
+      if (increment) {
+        const response = await supabase.rpc('increment', { x: 'votes' });
+        const newValue = response.data;
         
+        if (newValue !== null) {
+          const updateResult = await supabase
+            .from('project_features')
+            .update({ votes: newValue })
+            .eq('id', featureId);
+            
+          error = updateResult.error;
+        } else {
+          error = response.error;
+        }
+      } else {
+        const response = await supabase.rpc('decrement', { x: 'votes' });
+        const newValue = response.data;
+        
+        if (newValue !== null) {
+          const updateResult = await supabase
+            .from('project_features')
+            .update({ votes: newValue })
+            .eq('id', featureId);
+            
+          error = updateResult.error;
+        } else {
+          error = response.error;
+        }
+      }
+      
       if (error) {
         throw error;
       }

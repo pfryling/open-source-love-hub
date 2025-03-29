@@ -29,9 +29,13 @@ export const incrementVotes = async (
   table: 'projects' | 'project_features' | 'user_votes' | 'waitlist', 
   id: string
 ) => {
+  // First, let's call the 'increment' function to get the new value
+  const { data: newValue } = await supabase.rpc('increment', { x: 'votes' });
+  
+  // Then update the record with the new value
   return supabase
     .from(table)
-    .update({ votes: supabase.rpc('increment', { x: 'votes' }) })
+    .update({ votes: newValue })
     .eq('id', id);
 };
 
@@ -39,8 +43,12 @@ export const decrementVotes = async (
   table: 'projects' | 'project_features' | 'user_votes' | 'waitlist', 
   id: string
 ) => {
+  // First, let's call the 'decrement' function to get the new value
+  const { data: newValue } = await supabase.rpc('decrement', { x: 'votes' });
+  
+  // Then update the record with the new value
   return supabase
     .from(table)
-    .update({ votes: supabase.rpc('decrement', { x: 'votes' }) })
+    .update({ votes: newValue })
     .eq('id', id);
 };
