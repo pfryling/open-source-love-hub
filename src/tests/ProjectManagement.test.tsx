@@ -6,6 +6,7 @@ import AddProject from '../pages/AddProject';
 import { ProjectFormData } from '../types/project';
 import { useToast } from '../components/ui/use-toast';
 import ProjectForm from '../components/ProjectForm';
+import '@testing-library/jest-dom'; // Import jest-dom matchers
 
 // Mock the hooks and supabase client
 vi.mock('../components/ui/use-toast', () => ({
