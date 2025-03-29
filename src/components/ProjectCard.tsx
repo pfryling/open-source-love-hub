@@ -5,12 +5,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { CalendarDays, GitFork, Heart, Users } from "lucide-react";
 import { Project } from "@/types/project";
+import VoteCounter from "@/components/VoteCounter";
 
 interface ProjectCardProps {
   project: Project;
+  voteCount: number;
+  onVote: (increment: boolean) => boolean;
+  remainingVotes: number;
 }
 
-const ProjectCard = ({ project }: ProjectCardProps) => {
+const ProjectCard = ({ 
+  project,
+  voteCount,
+  onVote,
+  remainingVotes
+}: ProjectCardProps) => {
   return (
     <Card className="hover-scale overflow-hidden">
       <CardHeader className="pb-2">
@@ -20,9 +29,17 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               {project.name}
             </Link>
           </CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground space-x-2">
-            <Heart className="h-4 w-4 text-rose-400" />
-            <span>{project.stars || 0}</span>
+          <div className="flex items-center">
+            <VoteCounter 
+              projectId={project.id}
+              voteCount={voteCount}
+              onVote={onVote}
+              remainingVotes={remainingVotes}
+            />
+            <div className="flex items-center text-sm text-muted-foreground ml-3">
+              <Heart className="h-4 w-4 text-rose-400" />
+              <span className="ml-1">{project.stars || 0}</span>
+            </div>
           </div>
         </div>
         <CardDescription className="line-clamp-2">{project.shortDescription}</CardDescription>

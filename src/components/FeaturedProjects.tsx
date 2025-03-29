@@ -1,14 +1,19 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import ProjectCard from "./ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { mockProjects } from "@/data/mockProjects";
+import { useVotes } from "@/utils/voteUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const FeaturedProjects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [displayCount, setDisplayCount] = useState(6);
+  const { votes, remainingVotes, addVote, removeVote } = useVotes();
+  const { toast } = useToast();
   
   const filteredProjects = mockProjects.filter(project => 
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -20,6 +25,33 @@ const FeaturedProjects = () => {
   
   const loadMore = () => {
     setDisplayCount(prevCount => prevCount + 6);
+  };
+
+  const handleVote = (projectId: string, increment: boolean) => {
+    const success = increment ? addVote(projectId) : removeVote(projectId);
+    
+    if (success) {
+      const project = mockProjects.find(p => p.id === projectId);
+      if (increment) {
+        toast({
+          title: "Vote Added",
+          description: `You've voted for ${project?.name}. You have ${remainingVotes - 1} votes remaining.`,
+        });
+      } else {
+        toast({
+          title: "Vote Removed",
+          description: `You've removed your vote from ${project?.name}. You now have ${remainingVotes + 1} votes remaining.`,
+        });
+      }
+    } else if (increment && remainingVotes <= 0) {
+      toast({
+        title: "No Votes Remaining",
+        description: "You've used all your available votes. Remove votes from other projects to vote again.",
+        variant: "destructive"
+      });
+    }
+    
+    return success;
   };
 
   return (
@@ -53,7 +85,13 @@ const FeaturedProjects = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <ProjectCard 
+                  key={project.id} 
+                  project={project} 
+                  voteCount={votes[project.id] || 0}
+                  onVote={(increment) => handleVote(project.id, increment)}
+                  remainingVotes={remainingVotes}
+                />
               ))}
             </div>
             

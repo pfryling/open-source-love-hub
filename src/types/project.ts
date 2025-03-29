@@ -13,6 +13,15 @@ export interface Project {
   stars?: number;
   contributorsCount: number;
   lastUpdated: string;
+  features?: ProjectFeature[];
+}
+
+export interface ProjectFeature {
+  id: string;
+  name: string;
+  description: string;
+  votes: number;
+  status: "planned" | "in-progress" | "completed" | "suggested";
 }
 
 export interface ProjectFormData {
@@ -25,4 +34,8 @@ export interface ProjectFormData {
   goals: string;
   contributionAreas: string;
   tags: string;
+}
+
+export interface FeatureVotes {
+  [featureId: string]: number;
 }
