@@ -5,9 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 interface AuthGuardProps {
   children: ReactNode;
   requireAuth?: boolean;
+  fallback?: ReactNode;
 }
 
-const AuthGuard = ({ children, requireAuth = false }: AuthGuardProps) => {
+const AuthGuard = ({ children, requireAuth = false, fallback }: AuthGuardProps) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +35,11 @@ const AuthGuard = ({ children, requireAuth = false }: AuthGuardProps) => {
   // If not loading, and we don't require auth, or we do require auth and have a user
   if (!requireAuth || (requireAuth && user)) {
     return <>{children}</>;
+  }
+
+  // If fallback is provided, render it instead of redirecting
+  if (fallback) {
+    return <>{fallback}</>;
   }
 
   // Otherwise don't render anything

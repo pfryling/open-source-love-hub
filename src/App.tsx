@@ -14,6 +14,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./contexts/AuthContext";
 import AuthGuard from "./components/AuthGuard";
+import PreviewMessage from "./components/PreviewMessage";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +35,10 @@ const App = () => (
                 <Route 
                   path="/add-project" 
                   element={
-                    <AuthGuard requireAuth>
+                    <AuthGuard 
+                      requireAuth 
+                      fallback={<PreviewMessage action="add projects" />}
+                    >
                       <AddProject />
                     </AuthGuard>
                   } 
