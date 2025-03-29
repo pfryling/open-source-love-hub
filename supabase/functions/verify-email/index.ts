@@ -1,5 +1,6 @@
 
-// This function will handle sending verification emails to users who join the waitlist
+// This is a stub for a real email verification function
+// In a real app, you would use a service like Resend, SendGrid, or Postmark to send the emails
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
@@ -38,26 +39,21 @@ serve(async (req) => {
     // In a real app, this would be your deployed URL
     const verificationUrl = `${req.headers.get("origin")}/verify?token=${data.verification_token}`;
     
-    // Here we would send an email with the verification link
+    // Here you would send an email with the verification link
     // For demo purposes, we're just logging the link
     console.log(`Verification link for ${email}: ${verificationUrl}`);
     
-    // Send a welcome email
-    const welcomeMessage = `
-      <h1>Welcome to Open Source Love Hub!</h1>
-      <p>Thank you for joining our waitlist. Please verify your email by clicking the link below:</p>
-      <a href="${verificationUrl}">Verify Email</a>
-      <p>Once verified, you'll be able to create projects and vote on features!</p>
-      <p>Best regards,<br>The Open Source Love Hub Team</p>
-    `;
-    
-    // In a real app, you would use an email service API like:
+    // In a real app, you would use an email service like:
     /*
     await emailService.send({
-      from: "noreply@opensourcelovehub.com",
+      from: "noreply@yourdomain.com",
       to: email,
-      subject: "Welcome to Open Source Love Hub - Verify Your Email",
-      html: welcomeMessage
+      subject: "Verify your email for Open Source Love Hub",
+      html: `
+        <h1>Welcome to Open Source Love Hub!</h1>
+        <p>Click the link below to verify your email and get full access:</p>
+        <a href="${verificationUrl}">Verify Email</a>
+      `
     });
     */
     

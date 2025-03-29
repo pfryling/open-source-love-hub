@@ -1,90 +1,22 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Heart, Loader2, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { Heart } from "lucide-react";
 import FAQ from "@/components/FAQ";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useWaitlist } from "@/contexts/WaitlistContext";
+import WaitlistForm from "@/components/WaitlistForm";
 
 const Auth = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { user, session } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  const from = (location.state as any)?.from?.pathname || "/";
+  const { email, isVerified } = useWaitlist();
 
-  // Redirect if already logged in
+  // Redirect if already verified
   useEffect(() => {
-    if (user && session) {
-      navigate(from);
+    if (email && isVerified) {
+      navigate("/");
     }
-  }, [user, session, navigate, from]);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Welcome back!",
-        description: "You've been successfully signed in.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error signing in",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Registration successful!",
-        description: "Please check your email to verify your account.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error signing up",
-        description: error.message || "Please try again with a different email.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [email, isVerified, navigate]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -92,7 +24,7 @@ const Auth = () => {
         <Heart className="h-12 w-12 text-primary mb-2" />
         <h1 className="text-3xl font-bold text-center">Open Source Love Hub</h1>
         <p className="text-muted-foreground text-center max-w-md mt-2">
-          Sign in or create an account to submit and vote on open source projects
+          Join our waitlist to discover and support amazing open source projects
         </p>
       </div>
 
@@ -100,110 +32,36 @@ const Auth = () => {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Welcome</CardTitle>
+              <CardTitle>Join Our Waitlist</CardTitle>
               <CardDescription>
-                Sign in to your account or create a new one
+                Enter your email to get early access to all features
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn}>
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Signing in...
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="mr-2 h-4 w-4" />
-                            Sign In with Email
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp}>
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="signup-email">Email</Label>
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="signup-password">Password</Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          minLength={6}
-                          required
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Password must be at least 6 characters
-                        </p>
-                      </div>
-
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating account...
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="mr-2 h-4 w-4" />
-                            Sign Up with Email
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </TabsContent>
-              </Tabs>
+              <WaitlistForm />
+              
+              <div className="mt-6 text-sm text-muted-foreground">
+                <p>
+                  After you verify your email, you'll be able to:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Vote on projects</li>
+                  <li>Add your own projects</li>
+                  <li>Receive updates on new features</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
+
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            <p>
+              Browse projects in preview mode or join our waitlist to contribute.
+              <br />
+              <span className="font-medium">
+                Verifying your email allows you to vote and add projects.
+              </span>
+            </p>
+          </div>
         </div>
 
         <div className="bg-gray-50 rounded-lg p-6">
