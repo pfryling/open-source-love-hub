@@ -9,13 +9,13 @@ import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import AddProject from "./pages/AddProject";
-import Auth from "./pages/Auth";
+import Verify from "./pages/Verify";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { AuthProvider } from "./contexts/AuthContext";
-import AuthGuard from "./components/AuthGuard";
+import { WaitlistProvider } from "./contexts/WaitlistContext";
+import WaitlistGuard from "./components/WaitlistGuard";
 import PreviewMessage from "./components/PreviewMessage";
 
 const queryClient = new QueryClient();
@@ -25,7 +25,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
+      <WaitlistProvider>
         <BrowserRouter>
           <div className="flex flex-col min-h-screen">
             <Navbar />
@@ -37,15 +37,15 @@ const App = () => (
                 <Route 
                   path="/add-project" 
                   element={
-                    <AuthGuard 
-                      requireAuth 
+                    <WaitlistGuard 
+                      requireVerified 
                       fallback={<PreviewMessage action="add projects" />}
                     >
                       <AddProject />
-                    </AuthGuard>
+                    </WaitlistGuard>
                   } 
                 />
-                <Route path="/auth" element={<Auth />} />
+                <Route path="/verify" element={<Verify />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="*" element={<NotFound />} />
@@ -54,7 +54,7 @@ const App = () => (
             <Footer />
           </div>
         </BrowserRouter>
-      </AuthProvider>
+      </WaitlistProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

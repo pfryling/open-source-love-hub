@@ -136,6 +136,30 @@ export type Database = {
           },
         ]
       }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_verified: boolean
+          verification_token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_verified?: boolean
+          verification_token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_verified?: boolean
+          verification_token?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

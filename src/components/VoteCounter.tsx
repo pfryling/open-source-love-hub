@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronUp, ChevronDown, HelpCircle, LogIn } from "lucide-react";
+import { ChevronUp, ChevronDown, HelpCircle, Mail } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MAX_VOTES } from '@/utils/voteUtils';
-import { useAuth } from "@/contexts/AuthContext";
+import { useWaitlist } from "@/contexts/WaitlistContext";
 import { Link } from "react-router-dom";
 
 interface VoteCounterProps {
@@ -28,10 +28,11 @@ const VoteCounter = ({
   isDemo = false
 }: VoteCounterProps) => {
   const [animateCount, setAnimateCount] = useState(false);
-  const { user } = useAuth();
+  const { email, isVerified } = useWaitlist();
+  const isAuthenticated = email && isVerified;
 
   const handleVote = (increment: boolean) => {
-    if (!user) return;
+    if (!isAuthenticated) return;
     
     const success = onVote(increment);
     
@@ -48,7 +49,7 @@ const VoteCounter = ({
         size="sm"
         className="h-8 w-8 p-0"
         onClick={() => handleVote(true)}
-        disabled={!user || (!isDemo && remainingVotes === 0 && voteCount === 0)}
+        disabled={!isAuthenticated || (!isDemo && remainingVotes === 0 && voteCount === 0)}
       >
         <ChevronUp className="h-4 w-4" />
       </Button>
@@ -62,7 +63,7 @@ const VoteCounter = ({
         size="sm"
         className="h-8 w-8 p-0"
         onClick={() => handleVote(false)}
-        disabled={!user || voteCount === 0}
+        disabled={!isAuthenticated || voteCount === 0}
       >
         <ChevronDown className="h-4 w-4" />
       </Button>
@@ -71,19 +72,19 @@ const VoteCounter = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center text-xs text-muted-foreground mt-1">
-              {!user ? (
+              {!isAuthenticated ? (
                 <Link to="/auth">
-                  <LogIn className="h-3 w-3 mr-1 text-primary" />
+                  <Mail className="h-3 w-3 mr-1 text-primary" />
                 </Link>
               ) : (
                 <HelpCircle className="h-3 w-3 mr-1" />
               )}
-              <span>{isDemo ? "Demo" : user ? remainingVotes : "Login"}</span>
+              <span>{isDemo ? "Demo" : isAuthenticated ? remainingVotes : "Join"}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            {!user ? (
-              <p>Sign in to vote on projects</p>
+            {!isAuthenticated ? (
+              <p>Join our waitlist to vote on projects</p>
             ) : isDemo ? (
               <p>Demo project votes don't count against your limit</p>
             ) : (
