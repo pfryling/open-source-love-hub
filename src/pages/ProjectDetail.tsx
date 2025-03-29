@@ -175,7 +175,7 @@ const ProjectDetail = () => {
     );
   }
 
-  const handleVoteOnFeature = async (featureId: string, increment: boolean) => {
+  const handleVoteOnFeature = async (featureId: string, increment: boolean): Promise<boolean> => {
     try {
       // First update the UI optimistically
       setFeatures(prev => 
@@ -189,7 +189,11 @@ const ProjectDetail = () => {
       // Then update the database
       const { error } = await supabase
         .from('project_features')
-        .update({ votes: increment ? supabase.rpc('increment', { x: 'votes' }) : supabase.rpc('decrement', { x: 'votes' }) })
+        .update({ 
+          votes: increment 
+            ? supabase.rpc('increment', { x: 'votes' }) 
+            : supabase.rpc('decrement', { x: 'votes' }) 
+        })
         .eq('id', featureId);
         
       if (error) {
@@ -228,6 +232,7 @@ const ProjectDetail = () => {
     const projectId = project?.id;
     if (!projectId) return false;
     
+    // Call the addVote or removeVote function synchronously
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
