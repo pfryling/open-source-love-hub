@@ -40,6 +40,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       }
     },
   },
-  // Explicitly disable lock mechanism to avoid SecurityError in restricted contexts
-  lock: false
+  // Use global option to disable browser locks which cause SecurityError in restricted contexts
+  global: {
+    fetch: (...args) => fetch(...args)
+  }
 });

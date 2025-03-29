@@ -25,30 +25,35 @@ export const addProject = async (projectData: ProjectFormData, userId?: string):
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);
     
-    const insertData = {
-      name: projectData.name,
-      short_description: projectData.shortDescription,
-      full_description: projectData.fullDescription,
-      lovable_url: projectData.lovableUrl,
-      contact_email: projectData.contactEmail,
-      contact_discord: projectData.contactDiscord,
-      goals: projectData.goals,
-      contribution_areas: projectData.contributionAreas,
-      tags,
-      contributors_count: 1,
-      // Add user_id if available
-      ...(userId && { user_id: userId }),
-    };
+    const insertData = [
+      {
+        name: projectData.name,
+        short_description: projectData.shortDescription,
+        full_description: projectData.fullDescription,
+        lovable_url: projectData.lovableUrl,
+        contact_email: projectData.contactEmail,
+        contact_discord: projectData.contactDiscord,
+        goals: projectData.goals,
+        contribution_areas: projectData.contributionAreas,
+        tags,
+        contributors_count: 1,
+        // Add user_id if available
+        ...(userId ? { user_id: userId } : {}),
+      }
+    ];
     
     const { data, error } = await supabase
       .from('projects')
       .insert(insertData)
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
 
-    return { success: true, data: formatProject(data) };
+    if (!data || data.length === 0) {
+      throw new Error("Failed to retrieve created project");
+    }
+
+    return { success: true, data: formatProject(data[0]) };
   } catch (error: any) {
     console.error('Error adding project:', error);
     return { success: false, error: error.message || 'Failed to add project' };
@@ -77,14 +82,17 @@ export const updateProject = async (id: string, projectData: Partial<ProjectForm
     
     const { data, error } = await supabase
       .from('projects')
-      .update(updateData)
-      .eq('id', id as string)
-      .select()
-      .single();
+      .update([updateData])
+      .eq('id', id)
+      .select();
 
     if (error) throw error;
 
-    return { success: true, data: formatProject(data) };
+    if (!data || data.length === 0) {
+      throw new Error("Failed to retrieve updated project");
+    }
+
+    return { success: true, data: formatProject(data[0]) };
   } catch (error: any) {
     console.error('Error updating project:', error);
     return { success: false, error: error.message || 'Failed to update project' };
@@ -96,7 +104,7 @@ export const deleteProject = async (id: string): Promise<{ success: boolean; err
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', id as string);
+      .eq('id', id);
 
     if (error) throw error;
 

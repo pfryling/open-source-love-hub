@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,10 +117,10 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         // Convert tags string to array
         const tagsArray = formData.tags.split(',').map(tag => tag.trim());
         
-        // Insert the project into the database
+        // Insert the project into the database with array format
         const { data, error } = await supabase
           .from('projects')
-          .insert({
+          .insert([{
             name: formData.name,
             short_description: formData.shortDescription,
             full_description: formData.fullDescription,
@@ -131,7 +132,7 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
             tags: tagsArray,
             contributors_count: 1,
             is_demo: false
-          })
+          }])
           .select();
         
         if (error) {
