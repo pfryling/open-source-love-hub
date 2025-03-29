@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -102,7 +101,7 @@ const ProjectDetail = () => {
             name: feature.name,
             description: feature.description,
             votes: feature.votes || 0,
-            status: feature.status || 'suggested'
+            status: (feature.status as "planned" | "in-progress" | "completed" | "suggested") || "suggested"
           }));
           
           setFeatures(formattedFeatures);
@@ -189,7 +188,7 @@ const ProjectDetail = () => {
       // Then update the database
       const { error } = await supabase
         .from('project_features')
-        .update({ votes: increment ? supabase.rpc('increment', { x: 1 }) : supabase.rpc('decrement', { x: 1 }) })
+        .update({ votes: increment ? (feature => feature.votes + 1) : (feature => feature.votes - 1) })
         .eq('id', featureId);
         
       if (error) {
@@ -258,7 +257,7 @@ const ProjectDetail = () => {
         name: data.featureName,
         description: data.featureDescription,
         votes: 1, // Start with 1 vote (the suggester's vote)
-        status: "suggested",
+        status: "suggested" as const,
         project_id: project.id
       };
       
@@ -279,7 +278,7 @@ const ProjectDetail = () => {
         name: insertedFeature.name,
         description: insertedFeature.description,
         votes: insertedFeature.votes || 1,
-        status: insertedFeature.status || 'suggested'
+        status: (insertedFeature.status as "suggested" | "planned" | "in-progress" | "completed") || "suggested"
       };
       
       setFeatures(prev => [...prev, formattedFeature]);
@@ -318,6 +317,7 @@ const ProjectDetail = () => {
                   voteCount={projectVotes[project.id] || 0}
                   onVote={handleVoteOnProject}
                   remainingVotes={remainingVotes}
+                  isDemo={project.is_demo}
                 />
                 <span className="text-lg font-medium ml-2">{project.stars || 0} stars</span>
               </div>
@@ -504,8 +504,9 @@ const ProjectDetail = () => {
                               <VoteCounter
                                 projectId={`feature-${feature.id}`}
                                 voteCount={feature.votes}
-                                onVote={(increment) => handleVoteOnFeature(feature.id, increment)}
+                                onVote={increment => handleVoteOnFeature(feature.id, increment)}
                                 remainingVotes={remainingVotes}
+                                isDemo={project.is_demo}
                               />
                             </div>
                           </TableCell>

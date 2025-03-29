@@ -20,9 +20,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
-// Add utility functions for increment/decrement that we need for votes
-supabase.rpc = {
-  ...supabase.rpc,
-  increment: (x: number) => supabase.sql`${x} + 1`,
-  decrement: (x: number) => supabase.sql`${x} - 1`,
+// Helper functions for vote operations
+export const incrementVotes = (table: string, id: string) => {
+  return supabase.from(table).update({ votes: supabase.rpc('increment', { x: 'votes' }) }).eq('id', id);
+};
+
+export const decrementVotes = (table: string, id: string) => {
+  return supabase.from(table).update({ votes: supabase.rpc('decrement', { x: 'votes' }) }).eq('id', id);
 };
