@@ -42,6 +42,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   // Fix for SecurityError: LockManager.request: request() is not allowed in this context
   global: {
-    fetch: (...args) => fetch(...args)
+    fetch: (url, options) => fetch(url, options)
   }
 });
