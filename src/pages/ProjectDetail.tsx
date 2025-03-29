@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -188,7 +189,7 @@ const ProjectDetail = () => {
       // Then update the database
       const { error } = await supabase
         .from('project_features')
-        .update({ votes: increment ? (feature => feature.votes + 1) : (feature => feature.votes - 1) })
+        .update({ votes: increment ? supabase.rpc('increment', { x: 'votes' }) : supabase.rpc('decrement', { x: 'votes' }) })
         .eq('id', featureId);
         
       if (error) {
@@ -223,8 +224,10 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleVoteOnProject = (increment: boolean) => {
-    const projectId = project.id;
+  const handleVoteOnProject = (increment: boolean): boolean => {
+    const projectId = project?.id;
+    if (!projectId) return false;
+    
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
