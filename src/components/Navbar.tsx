@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, Menu, X, LogOut, Mail, User, FolderPlus } from "lucide-react";
 import { useWaitlist } from "@/contexts/WaitlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,20 +19,23 @@ import WaitlistDialog from "./WaitlistDialog";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { email, isVerified, setEmail } = useWaitlist();
+  const { email: waitlistEmail, isVerified } = useWaitlist();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("waitlist-email");
-    setEmail(null);
+  const handleSignOut = async () => {
+    await signOut();
     toast({
       title: "Signed out successfully",
     });
   };
+
+  const isAuthenticated = !!user;
+  const showAddProject = isAuthenticated && isVerified;
 
   return (
     <nav className="border-b shadow-sm py-4 bg-white sticky top-0 z-50">
@@ -51,16 +55,18 @@ const Navbar = () => {
               Projects
             </Link>
             
-            {email && isVerified ? (
+            {isAuthenticated ? (
               <>
                 <Link to="/my-projects" className="text-gray-700 hover:text-primary transition-colors">
                   My Projects
                 </Link>
-                <Link to="/add-project">
-                  <Button variant="default" size="sm">
-                    Add Project
-                  </Button>
-                </Link>
+                {showAddProject && (
+                  <Link to="/add-project">
+                    <Button variant="default" size="sm">
+                      Add Project
+                    </Button>
+                  </Link>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
@@ -69,7 +75,7 @@ const Navbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>
-                      {email}
+                      {user?.email}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => window.location.href = "/my-projects"}>
@@ -84,6 +90,15 @@ const Navbar = () => {
                 </DropdownMenu>
               </>
             ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  <User className="mr-2 h-4 w-4" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
+            
+            {!isVerified && (
               <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)}>
                 <Mail className="mr-2 h-4 w-4" />
                 Join Waitlist
@@ -119,7 +134,7 @@ const Navbar = () => {
               Projects
             </Link>
             
-            {email && isVerified ? (
+            {isAuthenticated ? (
               <>
                 <Link 
                   to="/my-projects" 
@@ -128,15 +143,17 @@ const Navbar = () => {
                 >
                   My Projects
                 </Link>
-                <Link 
-                  to="/add-project" 
-                  className="block py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Button variant="default" size="sm">
-                    Add Project
-                  </Button>
-                </Link>
+                {showAddProject && (
+                  <Link 
+                    to="/add-project" 
+                    className="block py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Button variant="default" size="sm">
+                      Add Project
+                    </Button>
+                  </Link>
+                )}
                 <div className="block py-2">
                   <Button 
                     variant="outline" 
@@ -148,11 +165,28 @@ const Navbar = () => {
                     className="w-full justify-start"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign out ({email})
+                    Sign out ({user?.email})
                   </Button>
                 </div>
               </>
             ) : (
+              <div className="block py-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    window.location.href = "/auth";
+                  }}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Sign In
+                </Button>
+              </div>
+            )}
+            
+            {!isVerified && (
               <div className="block py-2">
                 <Button 
                   variant="outline" 

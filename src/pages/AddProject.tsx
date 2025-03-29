@@ -3,32 +3,43 @@ import { useToast } from "@/components/ui/use-toast";
 import ProjectForm from "@/components/ProjectForm";
 import { ProjectFormData } from "@/types/project";
 import { useWaitlist } from "@/contexts/WaitlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AddProject = () => {
   const { toast } = useToast();
-  const { isVerified, loading } = useWaitlist();
+  const { isVerified, loading: waitlistLoading } = useWaitlist();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if user is not verified
+  // Redirect if user is not verified or not authenticated
   useEffect(() => {
-    if (!loading && !isVerified) {
-      toast({
-        title: "Verification required",
-        description: "You need to verify your email before adding projects.",
-        variant: "destructive"
-      });
-      navigate("/");
+    if (!waitlistLoading && !authLoading) {
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "You need to be logged in to add projects.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+      } else if (!isVerified) {
+        toast({
+          title: "Verification required",
+          description: "You need to verify your email before adding projects.",
+          variant: "destructive"
+        });
+        navigate("/");
+      }
     }
-  }, [isVerified, loading, navigate, toast]);
+  }, [isVerified, waitlistLoading, user, authLoading, navigate, toast]);
   
   const handleSubmit = (data: ProjectFormData) => {
     // This will be handled in the ProjectForm component now
     console.log("Form submitted:", data);
   };
   
-  if (loading) {
+  if (waitlistLoading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
