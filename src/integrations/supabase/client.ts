@@ -16,9 +16,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   global: {
     headers: { 'x-disable-lock': 'true' }
-  },
-  // Completely disable the navigator lock feature
-  locks: {
-    persistentLock: false
   }
 });

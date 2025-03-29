@@ -119,21 +119,19 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         // Insert the project into the database
         const { data, error } = await supabase
           .from('projects')
-          .insert([
-            {
-              name: formData.name,
-              short_description: formData.shortDescription,
-              full_description: formData.fullDescription,
-              lovable_url: formData.lovableUrl,
-              contact_email: formData.contactEmail,
-              contact_discord: formData.contactDiscord,
-              goals: formData.goals,
-              contribution_areas: formData.contributionAreas,
-              tags: tagsArray,
-              contributors_count: 1,
-              is_demo: false
-            }
-          ])
+          .insert({
+            name: formData.name,
+            short_description: formData.shortDescription,
+            full_description: formData.fullDescription,
+            lovable_url: formData.lovableUrl,
+            contact_email: formData.contactEmail,
+            contact_discord: formData.contactDiscord,
+            goals: formData.goals,
+            contribution_areas: formData.contributionAreas,
+            tags: tagsArray,
+            contributors_count: 1,
+            is_demo: false
+          })
           .select();
         
         if (error) {

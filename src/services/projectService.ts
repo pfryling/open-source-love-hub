@@ -74,7 +74,7 @@ export const updateProject = async (id: string, projectData: Partial<ProjectForm
     const { data, error } = await supabase
       .from('projects')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', id as string)
       .select()
       .single();
 
@@ -92,7 +92,7 @@ export const deleteProject = async (id: string): Promise<{ success: boolean; err
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', id);
+      .eq('id', id as string);
 
     if (error) throw error;
 
