@@ -62,6 +62,16 @@ const Footer = () => {
                   Discord Community
                 </a>
               </li>
+              <li>
+                <Link to="/privacy" className="text-gray-600 hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-gray-600 hover:text-primary transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

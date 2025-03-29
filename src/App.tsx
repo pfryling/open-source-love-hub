@@ -10,6 +10,8 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import AddProject from "./pages/AddProject";
 import Auth from "./pages/Auth";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -44,6 +46,8 @@ const App = () => (
                   } 
                 />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
