@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -117,9 +116,6 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         // Convert tags string to array
         const tagsArray = formData.tags.split(',').map(tag => tag.trim());
         
-        // Get the authenticated user (if any)
-        const { data: { session } } = await supabase.auth.getSession();
-        
         // Insert the project into the database
         const { data, error } = await supabase
           .from('projects')
@@ -134,11 +130,11 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
               goals: formData.goals,
               contribution_areas: formData.contributionAreas,
               tags: tagsArray,
-              user_id: session?.user?.id || null,
               contributors_count: 1,
               is_demo: false
             }
-          ]);
+          ])
+          .select();
         
         if (error) {
           throw error;
@@ -155,11 +151,11 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         });
         
         navigate("/projects");
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error submitting project:', error);
         toast({
           title: "Error submitting project",
-          description: "There was an error submitting your project. Please try again.",
+          description: error.message || "There was an error submitting your project. Please try again.",
           variant: "destructive"
         });
       } finally {

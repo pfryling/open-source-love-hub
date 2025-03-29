@@ -30,37 +30,17 @@ const Auth = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Join Our Waitlist</CardTitle>
-              <CardDescription>
-                Enter your email to get early access to all features
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <WaitlistForm />
-              
-              <div className="mt-6 text-sm text-muted-foreground">
-                <p>
-                  After you verify your email, you'll be able to:
-                </p>
-                <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Vote on projects</li>
-                  <li>Add your own projects</li>
-                  <li>Receive updates on new features</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <WaitlistForm />
+          
+          <div className="mt-6 text-sm text-muted-foreground text-center">
             <p>
-              Browse projects in preview mode or join our waitlist to contribute.
-              <br />
-              <span className="font-medium">
-                Verifying your email allows you to vote and add projects.
-              </span>
+              After you verify your email, you'll be able to:
             </p>
+            <ul className="list-disc pl-5 mt-2 space-y-1 max-w-md mx-auto">
+              <li>Vote on projects</li>
+              <li>Add your own projects</li>
+              <li>Receive updates on new features</li>
+            </ul>
           </div>
         </div>
 

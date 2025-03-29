@@ -15,7 +15,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   },
   global: {
-    // Disable the navigator lock feature that's causing the error
     headers: { 'x-disable-lock': 'true' }
+  },
+  // Completely disable the navigator lock feature
+  locks: {
+    persistentLock: false
   }
 });

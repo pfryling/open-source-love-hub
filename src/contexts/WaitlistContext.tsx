@@ -39,10 +39,15 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
   const joinWaitlist = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       // Check if email already exists and is verified
-      const { data: existingEntries } = await supabase
+      const { data: existingEntries, error: fetchError } = await supabase
         .from("waitlist")
         .select("*")
         .eq("email", email);
+
+      if (fetchError) {
+        console.error("Error checking existing entries:", fetchError);
+        throw fetchError;
+      }
 
       if (existingEntries && existingEntries.length > 0) {
         const entry = existingEntries[0];
@@ -65,11 +70,14 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Insert new entry
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from("waitlist")
         .insert([{ email }]);
 
-      if (error) throw error;
+      if (insertError) {
+        console.error("Error inserting into waitlist:", insertError);
+        throw insertError;
+      }
       
       // Save email to local storage
       localStorage.setItem("waitlist-email", email);
@@ -77,13 +85,18 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
 
       // In a real app, this would trigger an email with a verification link
       // For now, let's simulate by returning the token for testing
-      const { data } = await supabase
+      const { data: tokenData, error: tokenError } = await supabase
         .from("waitlist")
         .select("verification_token")
         .eq("email", email)
         .single();
 
-      console.log("Verification token for testing:", data?.verification_token);
+      if (tokenError) {
+        console.error("Error fetching verification token:", tokenError);
+        // Non-blocking error, we'll still return success
+      } else {
+        console.log("Verification token for testing:", tokenData?.verification_token);
+      }
 
       return { 
         success: true, 

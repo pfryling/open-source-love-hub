@@ -27,17 +27,27 @@ const WaitlistForm = () => {
     }
 
     setLoading(true);
-    const result = await joinWaitlist(email);
-    setLoading(false);
-
-    toast({
-      title: result.success ? "Success" : "Error",
-      description: result.message,
-      variant: result.success ? "default" : "destructive"
-    });
-
-    if (result.success) {
-      setEmail("");
+    try {
+      const result = await joinWaitlist(email);
+      
+      toast({
+        title: result.success ? "Success" : "Error",
+        description: result.message,
+        variant: result.success ? "default" : "destructive"
+      });
+  
+      if (result.success) {
+        setEmail("");
+      }
+    } catch (error: any) {
+      console.error("Error joining waitlist:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while joining the waitlist. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
