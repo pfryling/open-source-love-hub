@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,7 @@ import {
 interface ProjectCardProps {
   project: Project;
   voteCount: number;
-  onVote: (increment: boolean) => boolean | Promise<boolean>;
+  onVote: (increment: boolean) => void | Promise<void> | Promise<boolean>;
   remainingVotes: number;
 }
 

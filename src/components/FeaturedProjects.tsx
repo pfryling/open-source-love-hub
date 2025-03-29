@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProjectCard from "./ProjectCard";
@@ -31,7 +30,6 @@ const FeaturedProjects = () => {
           throw error;
         }
 
-        // Transform the data to match our Project interface
         const formattedProjects = data.map(project => ({
           id: project.id,
           name: project.name,
@@ -52,7 +50,6 @@ const FeaturedProjects = () => {
         setProjects(formattedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
-        // Fallback to mock data if fetch fails
         toast({
           title: "Failed to load projects",
           description: "Using demo data instead. Please try again later.",
@@ -66,7 +63,6 @@ const FeaturedProjects = () => {
     fetchProjects();
   }, [toast]);
 
-  // Helper function to format dates
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -93,8 +89,7 @@ const FeaturedProjects = () => {
     setDisplayCount(prevCount => prevCount + 6);
   };
 
-  const handleVote = (projectId: string, increment: boolean, isDemo: boolean) => {
-    // Don't count votes for demo projects
+  const handleVote = (projectId: string, increment: boolean, isDemo: boolean): boolean | Promise<boolean> => {
     if (isDemo) {
       toast({
         title: increment ? "Demo Vote Added" : "Demo Vote Removed",
