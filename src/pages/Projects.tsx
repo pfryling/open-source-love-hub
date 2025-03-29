@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,7 @@ const Projects = () => {
     }
   };
   
-  const handleVote = (projectId: string, increment: boolean) => {
+  const handleVote = async (projectId: string, increment: boolean): Promise<boolean> => {
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {

@@ -21,15 +21,15 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 // Helper functions for vote operations
-export const incrementVotes = (table: "project_features" | "projects" | "user_votes" | "waitlist", id: string) => {
-  return supabase
+export const incrementVotes = async (table: "project_features" | "projects" | "user_votes" | "waitlist", id: string) => {
+  return await supabase
     .from(table)
     .update({ votes: supabase.rpc('increment', { x: 1 }) })
     .eq('id', id);
 };
 
-export const decrementVotes = (table: "project_features" | "projects" | "user_votes" | "waitlist", id: string) => {
-  return supabase
+export const decrementVotes = async (table: "project_features" | "projects" | "user_votes" | "waitlist", id: string) => {
+  return await supabase
     .from(table)
     .update({ votes: supabase.rpc('decrement', { x: 1 }) })
     .eq('id', id);

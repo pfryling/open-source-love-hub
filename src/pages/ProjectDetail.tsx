@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,6 @@ import { Textarea } from "@/components/ui/textarea";
 import WaitlistGuard from "@/components/WaitlistGuard";
 import { ProjectFeature } from "@/types/project";
 
-// Define schema for feature submission form
 const featureSchema = z.object({
   featureName: z
     .string()
@@ -51,7 +49,6 @@ const featureSchema = z.object({
     .max(500, { message: "Description must not exceed 500 characters" }),
 });
 
-// Define valid status types
 type FeatureStatus = "suggested" | "planned" | "in-progress" | "completed";
 type TabType = "all" | FeatureStatus;
 
@@ -64,20 +61,20 @@ const ProjectDetail = () => {
   const [features, setFeatures] = useState<ProjectFeature[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [remainingVotes, setRemainingVotes] = useState<number>(3); // Example: User has 3 votes
+  const [remainingVotes, setRemainingVotes] = useState<number>(3);
   const [projectVotes, setProjectVotes] = useState<{ [projectId: string]: number }>({});
 
-  const handleVoteOnProject = async (increment: boolean): Promise<void> => {
+  const handleVoteOnProject = async (increment: boolean): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Authentication required",
         description: "Please sign in to vote on this project",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
-    if (!project) return;
+    if (!project) return false;
 
     try {
       if (increment && remainingVotes <= 0) {
@@ -86,10 +83,9 @@ const ProjectDetail = () => {
           description: "You have used all your available votes.",
           variant: "destructive",
         });
-        return;
+        return false;
       }
 
-      // Optimistically update the UI
       setProjectVotes((prevVotes) => ({
         ...prevVotes,
         [project.id]: (prevVotes[project.id] || 0) + (increment ? 1 : -1),
@@ -97,27 +93,13 @@ const ProjectDetail = () => {
 
       setRemainingVotes((prev) => (increment ? prev - 1 : prev + 1));
 
-      // Update the database
-      const { error } = await supabase
-        .from("projects")
-        .update({ votes: increment ? supabase.rpc('increment', { x: 1 }) : supabase.rpc('decrement', { x: 1 }) })
-        .eq("id", project.id);
-
-      if (error) {
-        console.error("Error updating vote:", error);
-        toast({
-          title: "Vote failed",
-          description: "There was an error processing your vote",
-          variant: "destructive",
-        });
-
-        // Revert the UI on failure
-        setProjectVotes((prevVotes) => ({
-          ...prevVotes,
-          [project.id]: (prevVotes[project.id] || 0) - (increment ? 1 : -1),
-        }));
-        setRemainingVotes((prev) => (increment ? prev + 1 : prev - 1));
+      if (increment) {
+        await supabase.rpc('increment_votes', { table_name: 'projects', row_id: project.id });
+      } else {
+        await supabase.rpc('decrement_votes', { table_name: 'projects', row_id: project.id });
       }
+      
+      return true;
     } catch (error) {
       console.error("Error voting on project:", error);
       toast({
@@ -125,6 +107,14 @@ const ProjectDetail = () => {
         description: "There was an error processing your vote",
         variant: "destructive",
       });
+
+      setProjectVotes((prevVotes) => ({
+        ...prevVotes,
+        [project.id]: (prevVotes[project.id] || 0) - (increment ? 1 : -1),
+      }));
+      setRemainingVotes((prev) => (increment ? prev + 1 : prev - 1));
+      
+      return false;
     }
   };
 
@@ -139,7 +129,6 @@ const ProjectDetail = () => {
     }
 
     try {
-      // First update the UI
       setFeatures((prevFeatures) =>
         prevFeatures.map((feature) => {
           if (feature.id === featureId) {
@@ -154,23 +143,12 @@ const ProjectDetail = () => {
         })
       );
 
-      // Then update the database
-      const { error } = await supabase
-        .from('project_features')
-        .update({ votes: increment ? supabase.rpc('increment', { x: 1 }) : supabase.rpc('decrement', { x: 1 }) })
-        .eq('id', featureId);
-        
-      if (error) {
-        console.error("Error updating vote:", error);
-        toast({
-          title: "Vote failed",
-          description: "There was an error processing your vote",
-          variant: "destructive",
-        });
-        return false;
+      if (increment) {
+        await supabase.rpc('increment_votes', { table_name: 'project_features', row_id: featureId });
+      } else {
+        await supabase.rpc('decrement_votes', { table_name: 'project_features', row_id: featureId });
       }
       
-      // Update remaining votes
       setRemainingVotes((prev) => (increment ? prev - 1 : prev + 1));
       return true;
     } catch (error) {
@@ -183,27 +161,6 @@ const ProjectDetail = () => {
       return false;
     }
   };
-
-  const form = useForm<z.infer<typeof featureSchema>>({
-    resolver: zodResolver(featureSchema),
-    defaultValues: {
-      featureName: "",
-      featureDescription: "",
-    },
-  });
-
-  useEffect(() => {
-    // Fetch initial votes from local storage or default to 3
-    const storedVotes = localStorage.getItem('remainingVotes');
-    if (storedVotes) {
-      setRemainingVotes(parseInt(storedVotes, 10));
-    }
-  }, []);
-
-  useEffect(() => {
-    // Update local storage whenever remainingVotes changes
-    localStorage.setItem('remainingVotes', remainingVotes.toString());
-  }, [remainingVotes]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -221,7 +178,6 @@ const ProjectDetail = () => {
         
         setProject(projectData);
         
-        // Fetch project features
         const { data: featuresData, error: featuresError } = await supabase
           .from("project_features")
           .select("*")
@@ -229,7 +185,6 @@ const ProjectDetail = () => {
           
         if (featuresError) throw featuresError;
         
-        // Format and set features with correct typing
         const formattedFeatures: ProjectFeature[] = featuresData.map(feature => ({
             id: feature.id,
             name: feature.name,
@@ -254,6 +209,25 @@ const ProjectDetail = () => {
     fetchProject();
   }, [id, toast]);
 
+  const form = useForm<z.infer<typeof featureSchema>>({
+    resolver: zodResolver(featureSchema),
+    defaultValues: {
+      featureName: "",
+      featureDescription: "",
+    },
+  });
+
+  useEffect(() => {
+    const storedVotes = localStorage.getItem('remainingVotes');
+    if (storedVotes) {
+      setRemainingVotes(parseInt(storedVotes, 10));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('remainingVotes', remainingVotes.toString());
+  }, [remainingVotes]);
+
   const onSubmit = async (data: z.infer<typeof featureSchema>) => {
     if (!user) {
       toast({
@@ -269,16 +243,14 @@ const ProjectDetail = () => {
     try {
       setIsSubmitting(true);
       
-      // Prepare the new feature
       const newFeature = {
         name: data.featureName,
         description: data.featureDescription,
-        votes: 1, // Start with 1 vote (the suggester's vote)
+        votes: 1,
         status: "suggested" as FeatureStatus,
         project_id: project.id
       };
       
-      // Insert into database
       const { data: insertedFeatureData, error } = await supabase
         .from("project_features")
         .insert(newFeature)
@@ -287,10 +259,8 @@ const ProjectDetail = () => {
         
       if (error) throw error;
       
-      // Get the inserted feature
       const insertedFeature = insertedFeatureData;
       
-      // Format and add to our local state
       const formattedFeature: ProjectFeature = {
         id: insertedFeature.id,
         name: insertedFeature.name,
@@ -301,7 +271,6 @@ const ProjectDetail = () => {
       
       setFeatures(prev => [...prev, formattedFeature]);
       
-      // Reset form
       form.reset();
       
       toast({
@@ -309,7 +278,6 @@ const ProjectDetail = () => {
         description: "Your feature has been successfully suggested",
       });
       
-      // Update the tab to show the feature
       setActiveTab("suggested");
     } catch (error) {
       console.error("Error suggesting feature:", error);

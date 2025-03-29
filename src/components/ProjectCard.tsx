@@ -16,7 +16,7 @@ import {
 interface ProjectCardProps {
   project: Project;
   voteCount: number;
-  onVote: (increment: boolean) => boolean;
+  onVote: (increment: boolean) => boolean | Promise<boolean>;
   remainingVotes: number;
 }
 
