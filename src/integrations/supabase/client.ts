@@ -13,5 +13,33 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-  }
+    storageKey: 'supabase-auth',
+    storage: {
+      getItem: (key) => {
+        try {
+          const value = localStorage.getItem(key);
+          return value;
+        } catch (error) {
+          console.error('Error accessing localStorage:', error);
+          return null;
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.error('Error setting localStorage item:', error);
+        }
+      },
+      removeItem: (key) => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.error('Error removing localStorage item:', error);
+        }
+      }
+    },
+  },
+  // Explicitly disable lock mechanism to avoid SecurityError in restricted contexts
+  lock: false
 });
