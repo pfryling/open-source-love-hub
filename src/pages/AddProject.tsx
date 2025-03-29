@@ -1,5 +1,5 @@
 
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import ProjectForm from "@/components/ProjectForm";
 import { ProjectFormData } from "@/types/project";
 import { useWaitlist } from "@/contexts/WaitlistContext";
