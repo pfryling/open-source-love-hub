@@ -17,9 +17,6 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { WaitlistProvider } from "./contexts/WaitlistContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import WaitlistGuard from "./components/WaitlistGuard";
-import AuthGuard from "./components/AuthGuard";
-import PreviewMessage from "./components/PreviewMessage";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -39,33 +36,8 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/projects/:id" element={<ProjectDetail />} />
-                  <Route 
-                    path="/add-project" 
-                    element={
-                      <AuthGuard 
-                        requireAuth
-                        fallback={<PreviewMessage action="add projects" />}
-                      >
-                        <WaitlistGuard 
-                          requireVerified 
-                          fallback={<PreviewMessage action="add projects" />}
-                        >
-                          <AddProject />
-                        </WaitlistGuard>
-                      </AuthGuard>
-                    } 
-                  />
-                  <Route 
-                    path="/my-projects" 
-                    element={
-                      <AuthGuard 
-                        requireAuth
-                        fallback={<PreviewMessage action="manage your projects" />}
-                      >
-                        <MyProjects />
-                      </AuthGuard>
-                    } 
-                  />
+                  <Route path="/add-project" element={<AddProject />} />
+                  <Route path="/my-projects" element={<MyProjects />} />
                   <Route path="/verify" element={<Verify />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />

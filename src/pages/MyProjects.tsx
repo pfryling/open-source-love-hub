@@ -1,93 +1,43 @@
-
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, AlertCircle } from "lucide-react";
 import { useWaitlist } from "@/contexts/WaitlistContext";
-import WaitlistForm from "@/components/WaitlistForm";
 import { Project } from "@/types/project";
 
 const MyProjects = () => {
   const { toast } = useToast();
-  const { email, isVerified, loading, getUserProjects } = useWaitlist();
+  const { getUserProjects } = useWaitlist();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (isVerified && email) {
-        try {
-          const userProjects = await getUserProjects();
-          setProjects(userProjects);
-        } catch (error) {
-          console.error("Error fetching projects:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load your projects. Please try again.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
+      try {
+        const userProjects = await getUserProjects();
+        setProjects(userProjects);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load projects. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
         setIsLoading(false);
       }
     };
 
-    if (!loading) {
-      fetchProjects();
-    }
-  }, [email, getUserProjects, isVerified, loading, toast]);
+    fetchProjects();
+  }, [getUserProjects, toast]);
 
-  if (loading || isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!email) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-12">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Join Our Waitlist</CardTitle>
-            <CardDescription>
-              Sign up to create and manage your projects
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <WaitlistForm />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!isVerified) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-12">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Verification Required</CardTitle>
-            <CardDescription>
-              Please check your email and verify your account to manage projects
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <AlertCircle className="h-16 w-16 text-amber-500" />
-            </div>
-            <p className="text-center">
-              We've sent a verification link to <strong>{email}</strong>. 
-              Please check your inbox and spam folder.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -96,9 +46,9 @@ const MyProjects = () => {
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Projects</h1>
+          <h1 className="text-3xl font-bold">Projects</h1>
           <p className="text-gray-600 mt-2">
-            Manage your open source projects
+            Manage open source projects
           </p>
         </div>
         <Button className="mt-4 md:mt-0" onClick={() => navigate("/add-project")}>
@@ -114,7 +64,7 @@ const MyProjects = () => {
               <AlertCircle className="h-16 w-16 text-muted-foreground" />
               <h3 className="text-xl font-medium">No Projects Yet</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                You haven't created any projects yet. Add your first project to showcase it to the community!
+                There aren't any projects yet. Add your first project to showcase it to the community!
               </p>
               <Button onClick={() => navigate("/add-project")}>
                 <PlusCircle className="mr-2 h-4 w-4" />

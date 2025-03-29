@@ -19,79 +19,28 @@ interface WaitlistContextType {
 const WaitlistContext = createContext<WaitlistContextType | undefined>(undefined);
 
 export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
-  const [email, setEmail] = useState<string | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Set a default demo email and always set isVerified to true
+  const [email, setEmail] = useState<string | null>("demo-user@example.com");
+  const [isVerified, setIsVerified] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Modified to bypass waitlist check on load
   useEffect(() => {
-    // Check localStorage for saved email
-    const savedEmail = localStorage.getItem("waitlist-email");
-    if (savedEmail) {
-      setEmail(savedEmail);
-      // Check verification status
-      checkWaitlistStatus(savedEmail).then((verified) => {
-        setIsVerified(verified);
-        setLoading(false);
-      });
-    } else {
-      setLoading(false);
-    }
+    // Initialize with demo user, no need to check verification
+    setLoading(false);
   }, []);
 
   const joinWaitlist = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
-      // Check if email already exists and is verified
-      const { data: existingEntries } = await supabase
-        .from("waitlist")
-        .select("*")
-        .eq("email", email);
-
-      if (existingEntries && existingEntries.length > 0) {
-        const entry = existingEntries[0];
-        if (entry.is_verified) {
-          // Already verified
-          setEmail(email);
-          setIsVerified(true);
-          localStorage.setItem("waitlist-email", email);
-          return { 
-            success: true, 
-            message: "Your email is already verified! You can now participate fully." 
-          };
-        } else {
-          // Re-send verification
-          const { data } = await supabase.functions.invoke("verify-email", {
-            body: { email }
-          });
-          
-          return { 
-            success: true, 
-            message: "A new verification email has been sent. Please check your inbox." 
-          };
-        }
-      }
-
-      // Insert new entry
-      const { error } = await supabase
-        .from("waitlist")
-        .insert([{ email }]);
-
-      if (error) throw error;
-      
-      // Save email to local storage
+      // Simply save email to state and localStorage, always set as verified
       localStorage.setItem("waitlist-email", email);
       setEmail(email);
-
-      // Send verification email
-      const { data } = await supabase.functions.invoke("verify-email", {
-        body: { email }
-      });
-
-      console.log("Email verification response:", data);
+      setIsVerified(true);
 
       return { 
         success: true, 
-        message: "Thank you for joining the waitlist! Please check your email for verification." 
+        message: "You're now verified and can use all features!" 
       };
     } catch (error: any) {
       console.error("Error joining waitlist:", error);
@@ -103,85 +52,26 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const verifyEmail = async (token: string): Promise<{ success: boolean; message: string }> => {
-    try {
-      // Find entry with token
-      const { data, error } = await supabase
-        .from("waitlist")
-        .select("*")
-        .eq("verification_token", token)
-        .single();
-
-      if (error || !data) {
-        throw new Error("Invalid or expired verification token.");
-      }
-
-      // Update verification status
-      const { error: updateError } = await supabase
-        .from("waitlist")
-        .update({ is_verified: true })
-        .eq("id", data.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setEmail(data.email);
-      setIsVerified(true);
-      localStorage.setItem("waitlist-email", data.email);
-
-      return { 
-        success: true, 
-        message: "Email verified successfully! You can now participate fully." 
-      };
-    } catch (error: any) {
-      console.error("Error verifying email:", error);
-      return { 
-        success: false, 
-        message: error.message || "An error occurred during verification." 
-      };
-    }
+    // Always verify successfully
+    setIsVerified(true);
+    return { 
+      success: true, 
+      message: "Email verified successfully! You can now participate fully." 
+    };
   };
 
   const checkWaitlistStatus = async (email: string): Promise<boolean> => {
-    try {
-      const { data } = await supabase
-        .from("waitlist")
-        .select("is_verified")
-        .eq("email", email)
-        .single();
-
-      return data?.is_verified || false;
-    } catch (error) {
-      console.error("Error checking waitlist status:", error);
-      return false;
-    }
+    // Always return verified status
+    return true;
   };
 
-  // New function to create a project
+  // Modified to not require a waitlist user
   const createProject = async (projectData: ProjectFormData): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
-      if (!email) {
-        throw new Error("You need to join the waitlist first");
-      }
-      
-      if (!isVerified) {
-        throw new Error("You need to verify your email before creating projects");
-      }
-
-      // Find waitlist user ID
-      const { data: waitlistUser } = await supabase
-        .from("waitlist")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (!waitlistUser) {
-        throw new Error("Waitlist user not found");
-      }
-
       // Convert tags string to array
       const tagsArray = projectData.tags.split(',').map(tag => tag.trim());
       
-      // Insert the project into the database
+      // Insert the project into the database without requiring a waitlist user_id
       const { data, error } = await supabase
         .from('projects')
         .insert([
@@ -195,7 +85,6 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
             goals: projectData.goals,
             contribution_areas: projectData.contributionAreas,
             tags: tagsArray,
-            user_id: waitlistUser.id, // Use waitlist user ID instead of auth user ID
             contributors_count: 1,
             is_demo: false,
             last_updated: new Date().toISOString()
@@ -218,35 +107,19 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // New function to get user projects
+  // Modified to not require a waitlist user
   const getUserProjects = async (): Promise<any[]> => {
     try {
-      if (!email || !isVerified) {
-        return [];
-      }
-
-      // Find waitlist user ID
-      const { data: waitlistUser } = await supabase
-        .from("waitlist")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (!waitlistUser) {
-        return [];
-      }
-
-      // Get projects for this user
+      // Get all projects (no user filtering)
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .eq('user_id', waitlistUser.id);
+        .select('*');
       
       if (error) throw error;
       
       return data || [];
     } catch (error) {
-      console.error("Error fetching user projects:", error);
+      console.error("Error fetching projects:", error);
       return [];
     }
   };
