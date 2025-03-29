@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProjectCard from "./ProjectCard";
@@ -6,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
+import { fetchProjects } from "@/services/projectService";
 
 const FeaturedProjects = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,36 +19,11 @@ const FeaturedProjects = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const fetchProjects = async () => {
+    const getProjects = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          throw error;
-        }
-
-        const formattedProjects = data.map(project => ({
-          id: project.id,
-          name: project.name,
-          shortDescription: project.short_description,
-          fullDescription: project.full_description,
-          lovableUrl: project.lovable_url,
-          contactEmail: project.contact_email,
-          contactDiscord: project.contact_discord,
-          goals: project.goals,
-          contributionAreas: project.contribution_areas,
-          tags: project.tags,
-          stars: project.stars,
-          contributorsCount: project.contributors_count,
-          lastUpdated: formatDate(project.last_updated),
-          is_demo: project.is_demo
-        }));
-
-        setProjects(formattedProjects);
+        const projectsData = await fetchProjects();
+        setProjects(projectsData);
       } catch (error) {
         console.error('Error fetching projects:', error);
         toast({
@@ -60,22 +36,8 @@ const FeaturedProjects = () => {
       }
     };
 
-    fetchProjects();
+    getProjects();
   }, [toast]);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 14) return '1 week ago';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    
-    return date.toLocaleDateString();
-  };
 
   const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -113,7 +75,7 @@ const FeaturedProjects = () => {
           variant: "destructive"
         });
       }
-      return;
+      return success;
     } else {
       const success = await removeVote(projectId);
       if (success) {
@@ -123,7 +85,7 @@ const FeaturedProjects = () => {
           description: `You've removed your vote from ${project?.name}. You now have ${remainingVotes + 1} votes remaining.`,
         });
       }
-      return;
+      return success;
     }
   };
 

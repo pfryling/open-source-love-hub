@@ -10,6 +10,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import AddProject from "./pages/AddProject";
 import Verify from "./pages/Verify";
+import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Navbar from "./components/Navbar";
@@ -32,6 +33,7 @@ const App = () => (
             <main className="flex-grow">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route 
