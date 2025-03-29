@@ -123,7 +123,7 @@ const formatProject = (project: any): Project => ({
   contributorsCount: project.contributors_count,
   lastUpdated: formatDate(project.last_updated),
   is_demo: project.is_demo,
-  userId: project.user_id
+  userId: project.user_id // Correctly map the user_id from database to userId in our type
 });
 
 // Format date helper
