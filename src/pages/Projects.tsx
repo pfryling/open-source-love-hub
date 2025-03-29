@@ -8,11 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, PlusCircle } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import { mockProjects } from "@/data/mockProjects";
+import { useVotes } from "@/utils/voteUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
+  const { votes, remainingVotes, addVote, removeVote } = useVotes();
+  const { toast } = useToast();
   
   // Extract unique tags from all projects
   const allTags = Array.from(
@@ -50,6 +54,33 @@ const Projects = () => {
     } else {
       setSelectedTags([...selectedTags, tag]);
     }
+  };
+  
+  const handleVote = (projectId: string, increment: boolean) => {
+    const success = increment ? addVote(projectId) : removeVote(projectId);
+    
+    if (success) {
+      const project = mockProjects.find(p => p.id === projectId);
+      if (increment) {
+        toast({
+          title: "Vote Added",
+          description: `You've voted for ${project?.name}. You have ${remainingVotes - 1} votes remaining.`,
+        });
+      } else {
+        toast({
+          title: "Vote Removed",
+          description: `You've removed your vote from ${project?.name}. You now have ${remainingVotes + 1} votes remaining.`,
+        });
+      }
+    } else if (increment && remainingVotes <= 0) {
+      toast({
+        title: "No Votes Remaining",
+        description: "You've used all your available votes. Remove votes from other projects to vote again.",
+        variant: "destructive"
+      });
+    }
+    
+    return success;
   };
   
   return (
@@ -141,7 +172,13 @@ const Projects = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+              voteCount={votes[project.id] || 0}
+              onVote={(increment) => handleVote(project.id, increment)}
+              remainingVotes={remainingVotes}
+            />
           ))}
         </div>
       )}

@@ -2,7 +2,7 @@
 import { useVotes, MAX_VOTES } from "@/utils/voteUtils";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 const VotesStatus = () => {
   const { remainingVotes } = useVotes();
@@ -14,7 +14,7 @@ const VotesStatus = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-2">
           <h3 className="text-lg font-medium flex items-center mb-2 md:mb-0">
-            <InfoCircle className="h-4 w-4 mr-2 text-primary" />
+            <Info className="h-4 w-4 mr-2 text-primary" />
             Your Voting Status
           </h3>
           <div className="flex items-center space-x-2">
