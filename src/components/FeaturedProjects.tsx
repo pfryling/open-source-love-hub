@@ -1,21 +1,87 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProjectCard from "./ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { mockProjects } from "@/data/mockProjects";
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Project } from "@/types/project";
 
 const FeaturedProjects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [displayCount, setDisplayCount] = useState(6);
   const { votes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const filteredProjects = mockProjects.filter(project => 
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Transform the data to match our Project interface
+        const formattedProjects = data.map(project => ({
+          id: project.id,
+          name: project.name,
+          shortDescription: project.short_description,
+          fullDescription: project.full_description,
+          lovableUrl: project.lovable_url,
+          contactEmail: project.contact_email,
+          contactDiscord: project.contact_discord,
+          goals: project.goals,
+          contributionAreas: project.contribution_areas,
+          tags: project.tags,
+          stars: project.stars,
+          contributorsCount: project.contributors_count,
+          lastUpdated: formatDate(project.last_updated),
+          is_demo: project.is_demo
+        }));
+
+        setProjects(formattedProjects);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        // Fallback to mock data if fetch fails
+        toast({
+          title: "Failed to load projects",
+          description: "Using demo data instead. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [toast]);
+
+  // Helper function to format dates
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    
+    return date.toLocaleDateString();
+  };
+
+  const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     project.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -27,11 +93,20 @@ const FeaturedProjects = () => {
     setDisplayCount(prevCount => prevCount + 6);
   };
 
-  const handleVote = (projectId: string, increment: boolean) => {
+  const handleVote = (projectId: string, increment: boolean, isDemo: boolean) => {
+    // Don't count votes for demo projects
+    if (isDemo) {
+      toast({
+        title: increment ? "Demo Vote Added" : "Demo Vote Removed",
+        description: `This is a demo project. Votes on demo projects don't count against your vote limit.`,
+      });
+      return true;
+    }
+    
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
-      const project = mockProjects.find(p => p.id === projectId);
+      const project = projects.find(p => p.id === projectId);
       if (increment) {
         toast({
           title: "Vote Added",
@@ -70,7 +145,11 @@ const FeaturedProjects = () => {
           </div>
         </div>
 
-        {filteredProjects.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-500">Loading projects...</p>
+          </div>
+        ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-lg text-gray-500">No projects found matching your search.</p>
             <Button 
@@ -88,8 +167,8 @@ const FeaturedProjects = () => {
                 <ProjectCard 
                   key={project.id} 
                   project={project} 
-                  voteCount={votes[project.id] || 0}
-                  onVote={(increment) => handleVote(project.id, increment)}
+                  voteCount={project.is_demo ? 0 : (votes[project.id] || 0)}
+                  onVote={(increment) => handleVote(project.id, increment, Boolean(project.is_demo))}
                   remainingVotes={remainingVotes}
                 />
               ))}

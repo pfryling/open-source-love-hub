@@ -9,7 +9,133 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      project_features: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          name: string
+          project_id: string
+          status: string | null
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          name: string
+          project_id: string
+          status?: string | null
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          name?: string
+          project_id?: string
+          status?: string | null
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_features_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          contact_discord: string | null
+          contact_email: string | null
+          contribution_areas: string | null
+          contributors_count: number | null
+          created_at: string | null
+          full_description: string
+          goals: string | null
+          id: string
+          is_demo: boolean | null
+          last_updated: string | null
+          lovable_url: string | null
+          name: string
+          short_description: string
+          stars: number | null
+          tags: string[]
+          user_id: string | null
+        }
+        Insert: {
+          contact_discord?: string | null
+          contact_email?: string | null
+          contribution_areas?: string | null
+          contributors_count?: number | null
+          created_at?: string | null
+          full_description: string
+          goals?: string | null
+          id?: string
+          is_demo?: boolean | null
+          last_updated?: string | null
+          lovable_url?: string | null
+          name: string
+          short_description: string
+          stars?: number | null
+          tags?: string[]
+          user_id?: string | null
+        }
+        Update: {
+          contact_discord?: string | null
+          contact_email?: string | null
+          contribution_areas?: string | null
+          contributors_count?: number | null
+          created_at?: string | null
+          full_description?: string
+          goals?: string | null
+          id?: string
+          is_demo?: boolean | null
+          last_updated?: string | null
+          lovable_url?: string | null
+          name?: string
+          short_description?: string
+          stars?: number | null
+          tags?: string[]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          project_id: string | null
+          user_id: string | null
+          vote_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          user_id?: string | null
+          vote_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          user_id?: string | null
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_votes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

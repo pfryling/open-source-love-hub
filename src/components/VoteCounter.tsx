@@ -15,13 +15,15 @@ interface VoteCounterProps {
   voteCount: number;
   onVote: (increment: boolean) => boolean;
   remainingVotes: number;
+  isDemo?: boolean;
 }
 
 const VoteCounter = ({ 
   projectId, 
   voteCount, 
   onVote,
-  remainingVotes 
+  remainingVotes,
+  isDemo = false
 }: VoteCounterProps) => {
   const [animateCount, setAnimateCount] = useState(false);
 
@@ -41,7 +43,7 @@ const VoteCounter = ({
         size="sm"
         className="h-8 w-8 p-0"
         onClick={() => handleVote(true)}
-        disabled={remainingVotes === 0}
+        disabled={!isDemo && remainingVotes === 0 && voteCount === 0}
       >
         <ChevronUp className="h-4 w-4" />
       </Button>
@@ -65,11 +67,15 @@ const VoteCounter = ({
           <TooltipTrigger asChild>
             <div className="flex items-center text-xs text-muted-foreground mt-1">
               <HelpCircle className="h-3 w-3 mr-1" />
-              <span>{remainingVotes}</span>
+              <span>{isDemo ? "Demo" : remainingVotes}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>You have {remainingVotes} out of {MAX_VOTES} votes remaining</p>
+            {isDemo ? (
+              <p>Demo project votes don't count against your limit</p>
+            ) : (
+              <p>You have {remainingVotes} out of {MAX_VOTES} votes remaining</p>
+            )}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

@@ -3,9 +3,15 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, GitFork, Heart, Users } from "lucide-react";
+import { CalendarDays, GitFork, Heart, Info, Users } from "lucide-react";
 import { Project } from "@/types/project";
 import VoteCounter from "@/components/VoteCounter";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProjectCardProps {
   project: Project;
@@ -21,20 +27,38 @@ const ProjectCard = ({
   remainingVotes
 }: ProjectCardProps) => {
   return (
-    <Card className="hover-scale overflow-hidden">
+    <Card className={`hover-scale overflow-hidden ${project.is_demo ? 'border-dashed border-2 border-amber-300' : ''}`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg md:text-xl">
-            <Link to={`/projects/${project.id}`} className="hover:text-primary transition-colors">
-              {project.name}
-            </Link>
-          </CardTitle>
+          <div className="flex items-center">
+            <CardTitle className="text-lg md:text-xl">
+              <Link to={`/projects/${project.id}`} className="hover:text-primary transition-colors">
+                {project.name}
+              </Link>
+            </CardTitle>
+            {project.is_demo && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                      <Info className="h-3 w-3 mr-1" />
+                      Demo
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This is a demo project. Votes don't count against your limit.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <div className="flex items-center">
             <VoteCounter 
               projectId={project.id}
               voteCount={voteCount}
               onVote={onVote}
               remainingVotes={remainingVotes}
+              isDemo={project.is_demo}
             />
             <div className="flex items-center text-sm text-muted-foreground ml-3">
               <Heart className="h-4 w-4 text-rose-400" />

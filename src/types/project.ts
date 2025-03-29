@@ -14,6 +14,7 @@ export interface Project {
   contributorsCount: number;
   lastUpdated: string;
   features?: ProjectFeature[];
+  is_demo?: boolean;
 }
 
 export interface ProjectFeature {

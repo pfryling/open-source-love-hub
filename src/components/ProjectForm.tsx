@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,9 +14,10 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { ProjectFormData } from "@/types/project";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectFormProps {
-  onSubmit: (data: ProjectFormData) => void;
+  onSubmit?: (data: ProjectFormData) => void;
   isSubmitting?: boolean;
 }
 
@@ -38,6 +38,7 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -105,16 +106,64 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
-      toast({
-        title: "Project submitted!",
-        description: "Your project has been submitted successfully.",
-      });
-      navigate("/projects");
+      setSubmitting(true);
+      
+      try {
+        // Convert tags string to array
+        const tagsArray = formData.tags.split(',').map(tag => tag.trim());
+        
+        // Get the authenticated user (if any)
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Insert the project into the database
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([
+            {
+              name: formData.name,
+              short_description: formData.shortDescription,
+              full_description: formData.fullDescription,
+              lovable_url: formData.lovableUrl,
+              contact_email: formData.contactEmail,
+              contact_discord: formData.contactDiscord,
+              goals: formData.goals,
+              contribution_areas: formData.contributionAreas,
+              tags: tagsArray,
+              user_id: session?.user?.id || null,
+              contributors_count: 1,
+              is_demo: false
+            }
+          ]);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Call the onSubmit prop if provided
+        if (onSubmit) {
+          onSubmit(formData);
+        }
+        
+        toast({
+          title: "Project submitted!",
+          description: "Your project has been submitted successfully.",
+        });
+        
+        navigate("/projects");
+      } catch (error) {
+        console.error('Error submitting project:', error);
+        toast({
+          title: "Error submitting project",
+          description: "There was an error submitting your project. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       toast({
         title: "Form has errors",
@@ -281,8 +330,8 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Project"}
+          <Button type="submit" disabled={submitting || isSubmitting}>
+            {submitting || isSubmitting ? "Submitting..." : "Submit Project"}
           </Button>
         </CardFooter>
       </form>
