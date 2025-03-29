@@ -1,14 +1,42 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X } from "lucide-react";
+import { Heart, Menu, X, LogOut, LogIn, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Error signing out",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -28,11 +56,40 @@ const Navbar = () => {
             <Link to="/projects" className="text-gray-700 hover:text-primary transition-colors">
               Projects
             </Link>
-            <Link to="/add-project">
-              <Button variant="default" size="sm">
-                Add Project
-              </Button>
-            </Link>
+            
+            {user ? (
+              <>
+                <Link to="/add-project">
+                  <Button variant="default" size="sm">
+                    Add Project
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+                      <User className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      {user.email}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -62,15 +119,45 @@ const Navbar = () => {
             >
               Projects
             </Link>
-            <Link 
-              to="/add-project" 
-              className="block py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Button variant="default" size="sm">
-                Add Project
-              </Button>
-            </Link>
+            
+            {user ? (
+              <>
+                <Link 
+                  to="/add-project" 
+                  className="block py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Button variant="default" size="sm">
+                    Add Project
+                  </Button>
+                </Link>
+                <div className="block py-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out ({user.email})
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Link 
+                to="/auth" 
+                className="block py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Button variant="outline" size="sm" className="w-full justify-start">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
