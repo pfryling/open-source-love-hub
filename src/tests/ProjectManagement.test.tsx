@@ -4,11 +4,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import AddProject from '../pages/AddProject';
 import { ProjectFormData } from '../types/project';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../components/ui/use-toast';
 import ProjectForm from '../components/ProjectForm';
 
 // Mock the hooks and supabase client
-vi.mock('../hooks/use-toast', () => ({
+vi.mock('../components/ui/use-toast', () => ({
   useToast: vi.fn(() => ({
     toast: vi.fn(),
   })),
