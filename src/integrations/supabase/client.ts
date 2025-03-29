@@ -40,7 +40,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       }
     },
   },
-  // Use global option to disable browser locks which cause SecurityError in restricted contexts
+  // Fix for SecurityError: LockManager.request: request() is not allowed in this context
   global: {
     fetch: (...args) => fetch(...args)
   }
