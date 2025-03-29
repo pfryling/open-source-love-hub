@@ -33,7 +33,7 @@ export const useVotes = () => {
   }, [votes]);
 
   // Add a vote to a project
-  const addVote = (projectId: string): boolean => {
+  const addVote = (projectId: string) => {
     if (remainingVotes <= 0) return false;
     
     setVotes(prevVotes => {
@@ -49,7 +49,7 @@ export const useVotes = () => {
   };
 
   // Remove a vote from a project
-  const removeVote = (projectId: string): boolean => {
+  const removeVote = (projectId: string) => {
     if (!votes[projectId] || votes[projectId] <= 0) return false;
     
     setVotes(prevVotes => {
