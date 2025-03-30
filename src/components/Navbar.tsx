@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,19 +83,19 @@ const Navbar = () => {
             <span className="sr-only">Toggle theme</span>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="https://github.com/joshencoder/lovable-hub">
+            <a href="https://github.com/joshencoder/lovable-hub" target="_blank" rel="noopener noreferrer">
               <Github className="h-[1.2rem] w-[1.2rem]" />
               <span className="sr-only">GitHub</span>
-            </Link>
+            </a>
           </Button>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar_url} />
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
                     <AvatarFallback>
-                      {user.display_name?.charAt(0).toUpperCase()}
+                      {user.user_metadata?.display_name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
