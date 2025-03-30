@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,7 @@ import { Project, ProjectComment } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Edit, Calendar, Users, Star, Mail, MessageSquare } from "lucide-react";
+import { Heart, Edit, Calendar, Users, Star, Mail, MessageSquare, Link as LinkIcon } from "lucide-react";
 import ProjectRating from "@/components/ProjectRating";
 import ProjectComments from "@/components/ProjectComments";
 import { useVotes } from "@/utils/voteUtils";
@@ -327,16 +326,41 @@ const ProjectDetail = () => {
               <CardDescription>Learn more about {project.name}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700">{project.fullDescription}</p>
+              <p className="text-gray-700 whitespace-pre-line">{project.fullDescription}</p>
               {project.lovableUrl && (
-                <Button variant="link" className="mt-4">
-                  <a href={project.lovableUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="link" className="mt-4 p-0">
+                  <a href={project.lovableUrl} target="_blank" rel="noopener noreferrer" 
+                     className="flex items-center">
+                    <LinkIcon className="h-4 w-4 mr-2" />
                     Visit Lovable Project
                   </a>
                 </Button>
               )}
             </CardContent>
           </Card>
+          
+          {(project.goals || project.contributionAreas) && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle>Project Goals & Contribution Areas</CardTitle>
+                <CardDescription>What this project aims to achieve and how you can help</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {project.goals && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Goals</h3>
+                    <p className="text-gray-700 whitespace-pre-line">{project.goals}</p>
+                  </div>
+                )}
+                {project.contributionAreas && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Contribution Areas</h3>
+                    <p className="text-gray-700 whitespace-pre-line">{project.contributionAreas}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
           
           <Card className="mb-4">
             <CardHeader>

@@ -48,20 +48,6 @@ const Navbar = () => {
               My Projects
             </Link>
           )}
-          <Link
-            to="/profile"
-            className={`${
-              pathName === "/profile"
-                ? "text-primary font-medium"
-                : "text-gray-600 hover:text-primary"
-            } flex items-center px-4 py-2 text-sm transition-colors`}
-          >
-            <UserCircle className="h-4 w-4 mr-2" />
-            Profile
-          </Link>
-          <Button variant="ghost" size="icon" className="text-pink-500">
-            <Heart className="h-5 w-5 fill-pink-500" />
-          </Button>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
