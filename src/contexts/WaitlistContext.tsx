@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +13,7 @@ interface WaitlistContextType {
   setEmail: (email: string | null) => void;
   createProject: (project: ProjectFormData) => Promise<{ success: boolean; message: string; data?: any }>;
   getUserProjects: () => Promise<any[]>;
+  updateProject: (projectId: string, formData: ProjectFormData & { image_url?: string }) => Promise<{ success: boolean }>;
 }
 
 const WaitlistContext = createContext<WaitlistContextType | undefined>(undefined);
@@ -124,6 +124,46 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateProject = async (projectId: string, formData: ProjectFormData & { image_url?: string }) => {
+    try {
+      // Process tags from comma-separated string to array
+      const tagsArray = formData.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag !== '');
+      
+      // Prepare the data for Supabase
+      const projectData = {
+        name: formData.name,
+        short_description: formData.shortDescription,
+        full_description: formData.fullDescription,
+        lovable_url: formData.lovableUrl,
+        contact_email: formData.contactEmail,
+        contact_discord: formData.contactDiscord,
+        goals: formData.goals,
+        contribution_areas: formData.contributionAreas,
+        tags: tagsArray,
+        image_url: formData.image_url
+      };
+      
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update(projectData)
+        .eq('id', projectId);
+      
+      if (error) throw error;
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating project:', error);
+      return {
+        success: false,
+        message: error.message || 'There was an error updating your project.'
+      };
+    }
+  };
+
   const value = {
     email,
     isVerified,
@@ -133,7 +173,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
     checkWaitlistStatus,
     setEmail,
     createProject,
-    getUserProjects
+    getUserProjects,
+    updateProject
   };
 
   return <WaitlistContext.Provider value={value}>{children}</WaitlistContext.Provider>;

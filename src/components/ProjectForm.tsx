@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,20 +14,31 @@ import {
   CardHeader,
   CardTitle 
 } from "@/components/ui/card";
-import { ProjectFormData } from "@/types/project";
+import { Project, ProjectFormData } from "@/types/project";
 import { useWaitlist } from "@/contexts/WaitlistContext";
+import ImageUpload from "./ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectFormProps {
   onSubmit?: (data: ProjectFormData) => void;
   isSubmitting?: boolean;
+  editMode?: boolean;
+  projectId?: string;
+  initialData?: Partial<ProjectFormData>;
 }
 
-const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
+const ProjectForm = ({ 
+  onSubmit, 
+  isSubmitting = false, 
+  editMode = false,
+  projectId,
+  initialData 
+}: ProjectFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { createProject } = useWaitlist();
+  const { createProject, updateProject, getUserProjects } = useWaitlist();
   
-  const [formData, setFormData] = useState<ProjectFormData>({
+  const [formData, setFormData] = useState<ProjectFormData & { image_url?: string }>({
     name: "",
     shortDescription: "",
     fullDescription: "",
@@ -35,11 +47,78 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
     contactDiscord: "",
     goals: "",
     contributionAreas: "",
-    tags: ""
+    tags: "",
+    image_url: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      if (editMode && projectId) {
+        try {
+          // First try to fetch from getUserProjects
+          const userProjects = await getUserProjects();
+          const project = userProjects.find(p => p.id === projectId);
+          
+          if (project) {
+            setFormData({
+              name: project.name || "",
+              shortDescription: project.shortDescription || "",
+              fullDescription: project.fullDescription || "",
+              lovableUrl: project.lovableUrl || "",
+              contactEmail: project.contactEmail || "",
+              contactDiscord: project.contactDiscord || "",
+              goals: project.goals || "",
+              contributionAreas: project.contributionAreas || "",
+              tags: project.tags?.join(", ") || "",
+              image_url: project.image_url || ""
+            });
+            return;
+          }
+          
+          // If not found or empty, try direct Supabase fetch
+          const { data, error } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('id', projectId)
+            .single();
+            
+          if (error) throw error;
+          
+          if (data) {
+            setFormData({
+              name: data.name || "",
+              shortDescription: data.short_description || "",
+              fullDescription: data.full_description || "",
+              lovableUrl: data.lovable_url || "",
+              contactEmail: data.contact_email || "",
+              contactDiscord: data.contact_discord || "",
+              goals: data.goals || "",
+              contributionAreas: data.contribution_areas || "",
+              tags: data.tags?.join(", ") || "",
+              image_url: data.image_url || ""
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching project data:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load project data. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } else if (initialData) {
+        setFormData(prev => ({
+          ...prev,
+          ...initialData
+        }));
+      }
+    };
+    
+    fetchProjectData();
+  }, [editMode, projectId, getUserProjects, toast, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -56,6 +135,13 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         return newErrors;
       });
     }
+  };
+
+  const handleImageChange = (url: string | null) => {
+    setFormData(prev => ({
+      ...prev,
+      image_url: url || ""
+    }));
   };
 
   const validateForm = () => {
@@ -114,8 +200,19 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
       setSubmitting(true);
       
       try {
-        // Use the createProject function from the waitlist context
-        const result = await createProject(formData);
+        const formDataToSubmit: ProjectFormData & { image_url?: string } = {
+          ...formData
+        };
+        
+        let result;
+        
+        if (editMode && projectId) {
+          // Update existing project
+          result = await updateProject(projectId, formDataToSubmit);
+        } else {
+          // Create new project
+          result = await createProject(formDataToSubmit);
+        }
         
         if (!result.success) {
           throw new Error(result.message);
@@ -127,16 +224,18 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
         }
         
         toast({
-          title: "Project submitted!",
-          description: "Your project has been submitted successfully.",
+          title: editMode ? "Project updated!" : "Project submitted!",
+          description: editMode 
+            ? "Your project has been updated successfully." 
+            : "Your project has been submitted successfully.",
         });
         
-        navigate("/projects");
+        navigate("/my-projects");
       } catch (error: any) {
         console.error('Error submitting project:', error);
         toast({
-          title: "Error submitting project",
-          description: error.message || "There was an error submitting your project. Please try again.",
+          title: `Error ${editMode ? 'updating' : 'submitting'} project`,
+          description: error.message || `There was an error ${editMode ? 'updating' : 'submitting'} your project. Please try again.`,
           variant: "destructive"
         });
       } finally {
@@ -154,10 +253,12 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Add Your Project</CardTitle>
+        <CardTitle>{editMode ? "Edit Your Project" : "Add Your Project"}</CardTitle>
         <CardDescription>
-          Share your Lovable project with potential contributors. The more details you provide, 
-          the easier it will be for others to understand and contribute to your project.
+          {editMode 
+            ? "Update your project details to keep information current for potential contributors."
+            : "Share your Lovable project with potential contributors. The more details you provide, the easier it will be for others to understand and contribute to your project."
+          }
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -175,6 +276,11 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
             />
             {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
           </div>
+          
+          <ImageUpload 
+            value={formData.image_url} 
+            onChange={handleImageChange} 
+          />
           
           <div className="space-y-2">
             <Label htmlFor="shortDescription" className="text-base">
@@ -309,7 +415,9 @@ const ProjectForm = ({ onSubmit, isSubmitting = false }: ProjectFormProps) => {
             Cancel
           </Button>
           <Button type="submit" disabled={submitting || isSubmitting}>
-            {submitting || isSubmitting ? "Submitting..." : "Submit Project"}
+            {submitting || isSubmitting 
+              ? (editMode ? "Updating..." : "Submitting...") 
+              : (editMode ? "Update Project" : "Submit Project")}
           </Button>
         </CardFooter>
       </form>

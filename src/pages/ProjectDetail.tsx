@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,8 @@ import {
   HandHelping,
   Plus,
   ThumbsUp,
-  Loader2
+  Loader2,
+  UserCircle
 } from "lucide-react";
 import { mockProjects } from "@/data/mockProjects";
 import { ProjectFeature, Project } from "@/types/project";
@@ -32,6 +32,8 @@ import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
 import VoteCounter from "@/components/VoteCounter";
 import { supabase } from "@/integrations/supabase/client";
+import ProjectRating from "@/components/ProjectRating";
+import ProjectComments from "@/components/ProjectComments";
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +43,10 @@ const ProjectDetail = () => {
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const { votes: projectVotes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [userRating, setUserRating] = useState(0);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -82,10 +88,42 @@ const ProjectDetail = () => {
           stars: projectData.stars,
           contributorsCount: projectData.contributors_count,
           lastUpdated: formatDate(projectData.last_updated),
-          is_demo: projectData.is_demo
+          is_demo: projectData.is_demo,
+          image_url: projectData.image_url,
+          rating_sum: projectData.rating_sum,
+          rating_count: projectData.rating_count
         };
         
         setProject(formattedProject);
+        
+        // Set rating information
+        if (projectData.rating_count && projectData.rating_count > 0) {
+          const avgRating = projectData.rating_sum / projectData.rating_count;
+          setAverageRating(avgRating);
+          setRatingCount(projectData.rating_count);
+        }
+        
+        // Check if user has favorited this project
+        const { data: favoriteData, error: favoriteError } = await supabase
+          .from('user_favorites')
+          .select('id')
+          .eq('project_id', id)
+          .maybeSingle();
+          
+        if (!favoriteError && favoriteData) {
+          setIsFavorited(true);
+        }
+        
+        // Check if user has rated this project
+        const { data: ratingData, error: ratingError } = await supabase
+          .from('project_ratings')
+          .select('rating')
+          .eq('project_id', id)
+          .maybeSingle();
+          
+        if (!ratingError && ratingData) {
+          setUserRating(ratingData.rating);
+        }
         
         // Fetch project features
         const { data: featureData, error: featureError } = await supabase
@@ -148,6 +186,53 @@ const ProjectDetail = () => {
       agreeToContribute: false
     }
   });
+
+  const handleToggleFavorite = async () => {
+    try {
+      if (isFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('project_id', project.id);
+          
+        if (error) throw error;
+        
+        setIsFavorited(false);
+        toast({
+          title: "Removed from favorites",
+          description: `${project.name} has been removed from your favorites.`,
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            project_id: project.id
+          });
+          
+        if (error) throw error;
+        
+        setIsFavorited(true);
+        toast({
+          title: "Added to favorites",
+          description: `${project.name} has been added to your favorites.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleRatingChange = (newAverage: number, newCount: number) => {
+    setAverageRating(newAverage);
+    setRatingCount(newCount);
+  };
   
   if (loading) {
     return (
@@ -343,6 +428,15 @@ const ProjectDetail = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
               <h1 className="text-3xl font-bold">{project.name}</h1>
               <div className="flex items-center space-x-2 mt-2 md:mt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={isFavorited ? "bg-red-50 text-red-500 border-red-200 hover:bg-red-100" : ""}
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart className={`mr-2 h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : ""}`} />
+                  {isFavorited ? "Favorited" : "Add to Favorites"}
+                </Button>
                 <VoteCounter 
                   projectId={project.id}
                   voteCount={projectVotes[project.id] || 0}
@@ -361,6 +455,16 @@ const ProjectDetail = () => {
                 </Badge>
               ))}
             </div>
+            
+            {project.image_url && (
+              <div className="mb-6 w-full h-64 overflow-hidden rounded-lg">
+                <img 
+                  src={project.image_url} 
+                  alt={project.name} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="flex items-center text-gray-600">
@@ -387,6 +491,15 @@ const ProjectDetail = () => {
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold mb-4">About the Project</h2>
+                <div className="mb-4">
+                  <ProjectRating 
+                    projectId={project.id}
+                    initialRating={userRating}
+                    averageRating={averageRating}
+                    ratingCount={ratingCount}
+                    onRatingChange={handleRatingChange}
+                  />
+                </div>
                 <p className="text-gray-700 whitespace-pre-line">{project.fullDescription}</p>
               </CardContent>
             </Card>
@@ -552,6 +665,8 @@ const ProjectDetail = () => {
                 )}
               </CardContent>
             </Card>
+            
+            <ProjectComments projectId={project.id} />
           </div>
         </div>
         

@@ -18,6 +18,8 @@ import Footer from "./components/Footer";
 import { WaitlistProvider } from "./contexts/WaitlistContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Auth from "./pages/Auth";
+import UserProfile from "./pages/UserProfile";
+import EditProject from "./pages/EditProject";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +39,9 @@ const App = () => (
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/projects/:id" element={<ProjectDetail />} />
                   <Route path="/add-project" element={<AddProject />} />
+                  <Route path="/edit-project/:id" element={<EditProject />} />
                   <Route path="/my-projects" element={<MyProjects />} />
+                  <Route path="/profile" element={<UserProfile />} />
                   <Route path="/verify" element={<Verify />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />

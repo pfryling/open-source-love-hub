@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, GitFork, Heart, Info, Users } from "lucide-react";
 import { Project } from "@/types/project";
 import VoteCounter from "@/components/VoteCounter";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Tooltip,
   TooltipContent,
@@ -18,14 +21,68 @@ interface ProjectCardProps {
   voteCount: number;
   onVote: (increment: boolean) => boolean;
   remainingVotes: number;
+  isFavorited?: boolean;
 }
 
 const ProjectCard = ({ 
   project,
   voteCount,
   onVote,
-  remainingVotes
+  remainingVotes,
+  isFavorited = false
 }: ProjectCardProps) => {
+  const [favorited, setFavorited] = useState(isFavorited);
+  const [isToggling, setIsToggling] = useState(false);
+  const { toast } = useToast();
+
+  const handleToggleFavorite = async () => {
+    if (isToggling) return;
+    
+    setIsToggling(true);
+    
+    try {
+      if (favorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('project_id', project.id);
+          
+        if (error) throw error;
+        
+        setFavorited(false);
+        toast({
+          title: "Removed from favorites",
+          description: `${project.name} has been removed from your favorites.`,
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            project_id: project.id
+          });
+          
+        if (error) throw error;
+        
+        setFavorited(true);
+        toast({
+          title: "Added to favorites",
+          description: `${project.name} has been added to your favorites.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   return (
     <Card className={`hover-scale overflow-hidden ${project.is_demo ? 'border-dashed border-2 border-amber-300' : ''}`}>
       <CardHeader className="pb-2">
@@ -60,15 +117,31 @@ const ProjectCard = ({
               remainingVotes={remainingVotes}
               isDemo={project.is_demo}
             />
-            <div className="flex items-center text-sm text-muted-foreground ml-3">
-              <Heart className="h-4 w-4 text-rose-400" />
-              <span className="ml-1">{project.stars || 0}</span>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-1"
+              onClick={handleToggleFavorite}
+              disabled={isToggling}
+            >
+              <Heart 
+                className={`h-5 w-5 ${favorited ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+              />
+            </Button>
           </div>
         </div>
         <CardDescription className="line-clamp-2">{project.shortDescription}</CardDescription>
       </CardHeader>
       <CardContent>
+        {project.image_url && (
+          <div className="w-full h-40 mb-4 overflow-hidden rounded-md">
+            <img 
+              src={project.image_url} 
+              alt={project.name} 
+              className="w-full h-full object-cover transition-transform hover:scale-105"
+            />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2 mb-4">
           {project.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">

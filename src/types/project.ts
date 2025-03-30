@@ -15,6 +15,9 @@ export interface Project {
   lastUpdated: string;
   features?: ProjectFeature[];
   is_demo?: boolean;
+  image_url?: string;
+  rating_sum?: number;
+  rating_count?: number;
 }
 
 export interface ProjectFeature {
@@ -35,8 +38,37 @@ export interface ProjectFormData {
   goals: string;
   contributionAreas: string;
   tags: string;
+  image?: File;
 }
 
 export interface FeatureVotes {
   [featureId: string]: number;
+}
+
+export interface ProjectComment {
+  id: string;
+  project_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  user_name?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  bio: string;
+  avatar_url: string;
+  interests: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserFavorite {
+  id: string;
+  user_id: string;
+  project_id: string;
+  created_at: string;
+  project?: Project;
 }
