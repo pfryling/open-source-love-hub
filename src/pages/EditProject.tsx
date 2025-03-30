@@ -35,15 +35,15 @@ const EditProject = () => {
           shortDescription: data.short_description,
           fullDescription: data.full_description,
           lovableUrl: data.lovable_url,
-          contactEmail: data.contact_email,
-          contactDiscord: data.contact_discord,
-          goals: data.goals,
-          contributionAreas: data.contribution_areas,
+          contactEmail: data.contact_email || "",
+          contactDiscord: data.contact_discord || "",
+          goals: data.goals || "",
+          contributionAreas: data.contribution_areas || "",
           tags: data.tags || [],
           stars: data.stars,
           contributorsCount: data.contributors_count,
           lastUpdated: data.last_updated,
-          image_url: data.image_url
+          image_url: data.image_url || ""
         });
       } catch (error) {
         console.error("Error fetching project:", error);

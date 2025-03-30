@@ -8,8 +8,8 @@ import {
 
 const faqItems = [
   {
-    question: "What is Open Source Love Hub?",
-    answer: "Open Source Love Hub is a platform that connects open source project owners with potential contributors. It focuses specifically on projects built with Lovable, allowing developers to discover projects they can contribute to, and project owners to find talented contributors to help their projects grow."
+    question: "What is The Love Hub?",
+    answer: "The Love Hub is a platform that connects project owners with potential contributors. It focuses specifically on projects built with Lovable, allowing developers to discover projects they can contribute to, and project owners to find talented contributors to help their projects grow."
   },
   {
     question: "How can I contribute to a project?",
@@ -44,7 +44,7 @@ const FAQ = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions about Open Source Love Hub and how to get involved with Lovable projects.
+            Find answers to common questions about The Love Hub and how to get involved with Lovable projects.
           </p>
         </div>
 

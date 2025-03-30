@@ -22,8 +22,8 @@ const Navbar = () => {
   return (
     <div className="bg-background border-b">
       <div className="container flex h-16 items-center justify-between py-4">
-        <Link to="/" className="font-bold text-2xl">
-          The Love Hub
+        <Link to="/" className="flex items-center">
+          <Heart className="h-8 w-8 text-primary fill-primary" />
         </Link>
         <div className="flex items-center space-x-4">
           <Link
