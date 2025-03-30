@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project, ProjectComment } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Edit, Calendar, Users, Star } from "lucide-react";
+import { Heart, Edit, Calendar, Users, Star, Mail, MessageSquare } from "lucide-react";
 import ProjectRating from "@/components/ProjectRating";
 import ProjectComments from "@/components/ProjectComments";
 import { useVotes } from "@/utils/voteUtils";
@@ -19,10 +20,11 @@ const ProjectDetail = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
-  const [comments, setComments] = useState<ProjectComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
   const [rating, setRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
   const [userHasRated, setUserHasRated] = useState(false);
   const { votes, remainingVotes, addVote, removeVote } = useVotes();
   const [isOwner, setIsOwner] = useState(false);
@@ -60,10 +62,17 @@ const ProjectDetail = () => {
             contributorsCount: projectData.contributors_count || 0,
             lastUpdated: projectData.last_updated,
             image_url: projectData.image_url,
-            is_demo: projectData.is_demo
+            is_demo: projectData.is_demo,
+            rating_sum: projectData.rating_sum || 0,
+            rating_count: projectData.rating_count || 0
           };
           
           setProject(formattedProject);
+          
+          if (formattedProject.rating_count && formattedProject.rating_count > 0) {
+            setAverageRating(formattedProject.rating_sum / formattedProject.rating_count);
+            setRatingCount(formattedProject.rating_count);
+          }
           
           // Check if user is the owner
           if (user && projectData.user_id === user.id) {
@@ -95,36 +104,6 @@ const ProjectDetail = () => {
             setUserHasRated(true);
           }
         }
-        
-        // Fetch comments
-        const { data: commentsData } = await supabase
-          .from('project_comments')
-          .select(`
-            id,
-            user_id,
-            comment,
-            created_at,
-            user_profiles:user_id (
-              display_name,
-              avatar_url
-            )
-          `)
-          .eq('project_id', id)
-          .order('created_at', { ascending: false });
-          
-        if (commentsData) {
-          const formattedComments: ProjectComment[] = commentsData.map(item => ({
-            id: item.id,
-            project_id: id,
-            user_id: item.user_id,
-            comment: item.comment,
-            created_at: item.created_at,
-            user_name: item.user_profiles?.display_name || 'Anonymous'
-          }));
-          
-          setComments(formattedComments);
-        }
-        
       } catch (error) {
         console.error("Error fetching project details:", error);
         toast({
@@ -228,6 +207,18 @@ const ProjectDetail = () => {
       }
       
       setRating(newRating);
+      
+      // Update the average rating display
+      const newTotalRating = userHasRated 
+        ? (averageRating * ratingCount) - rating + newRating 
+        : (averageRating * ratingCount) + newRating;
+        
+      const newCount = userHasRated ? ratingCount : ratingCount + 1;
+      const newAverage = newTotalRating / newCount;
+      
+      setAverageRating(newAverage);
+      setRatingCount(newCount);
+      
       toast({
         title: "Rating submitted",
         description: "Thank you for rating this project!",
@@ -237,62 +228,6 @@ const ProjectDetail = () => {
       toast({
         title: "Error",
         description: "Failed to submit rating. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const addComment = async (comment: string) => {
-    if (!user) {
-      toast({
-        title: "Not logged in",
-        description: "You must be logged in to add comments.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('project_comments')
-        .insert({
-          project_id: id,
-          user_id: user.id,
-          comment: comment
-        })
-        .select(`
-          id,
-          user_id,
-          comment,
-          created_at,
-          user_profiles:user_id (
-            display_name,
-            avatar_url
-          )
-        `)
-        .single();
-        
-      if (error) throw error;
-      
-      const formattedComment: ProjectComment = {
-        id: data.id,
-        project_id: id,
-        user_id: user.id,
-        comment: comment,
-        created_at: data.created_at,
-        user_name: data.user_profiles?.display_name || 'Anonymous'
-      };
-      
-      setComments(prevComments => [formattedComment, ...prevComments]);
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added successfully.",
-      });
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add comment. Please try again.",
         variant: "destructive"
       });
     }
@@ -393,11 +328,13 @@ const ProjectDetail = () => {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">{project.fullDescription}</p>
-              <Button variant="link" className="mt-4">
-                <a href={project.lovableUrl} target="_blank" rel="noopener noreferrer">
-                  Visit Lovable Project
-                </a>
-              </Button>
+              {project.lovableUrl && (
+                <Button variant="link" className="mt-4">
+                  <a href={project.lovableUrl} target="_blank" rel="noopener noreferrer">
+                    Visit Lovable Project
+                  </a>
+                </Button>
+              )}
             </CardContent>
           </Card>
           
@@ -427,9 +364,19 @@ const ProjectDetail = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button className="w-full" onClick={toggleFavorite}>
+                <Heart className="h-4 w-4 mr-2" />
                 {isFavorited ? "Unfavorite" : "Favorite"}
               </Button>
-              <ProjectRating rating={rating} onRating={handleRating} userHasRated={userHasRated} />
+              <ProjectRating 
+                projectId={id || ""}
+                initialRating={rating}
+                averageRating={averageRating}
+                ratingCount={ratingCount}
+                onRatingChange={(newAvg, newCount) => {
+                  setAverageRating(newAvg);
+                  setRatingCount(newCount);
+                }}
+              />
               <Button className="w-full" onClick={() => handleVote(project.id, true)} disabled={remainingVotes <= 0}>
                 <Star className="h-4 w-4 mr-2" />
                 Vote ({votes[project.id] || 0}) - {remainingVotes} votes left
@@ -453,7 +400,7 @@ const ProjectDetail = () => {
               )}
               {project.contactDiscord && (
                 <div className="flex items-center space-x-2">
-                  <Discord className="h-5 w-5 text-gray-500" />
+                  <MessageSquare className="h-5 w-5 text-gray-500" />
                   <span>{project.contactDiscord}</span>
                 </div>
               )}
@@ -462,11 +409,9 @@ const ProjectDetail = () => {
         </div>
       </div>
       
-      <ProjectComments projectId={id} comments={comments} addComment={addComment} />
+      <ProjectComments projectId={id || ""} />
     </div>
   );
 };
 
 export default ProjectDetail;
-
-import { Mail, Discord } from "lucide-react";

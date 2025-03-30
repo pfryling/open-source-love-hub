@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProjectRatingProps {
   projectId: string;
@@ -25,12 +26,13 @@ const ProjectRating = ({
   const [hoveredRating, setHoveredRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Calculate the display value for stars
   const displayValue = hoveredRating > 0 ? hoveredRating : rating;
   
   const handleRatingSubmit = async (newRating: number) => {
-    if (readOnly) return;
+    if (readOnly || !user) return;
     if (isSubmitting) return;
     
     setIsSubmitting(true);
@@ -41,6 +43,7 @@ const ProjectRating = ({
         .from('project_ratings')
         .select('id, rating')
         .eq('project_id', projectId)
+        .eq('user_id', user.id)
         .maybeSingle();
         
       if (checkError) throw checkError;
@@ -63,6 +66,7 @@ const ProjectRating = ({
           .from('project_ratings')
           .insert({
             project_id: projectId,
+            user_id: user.id,
             rating: newRating
           });
           
@@ -119,14 +123,14 @@ const ProjectRating = ({
             <button
               key={star}
               type="button"
-              disabled={readOnly || isSubmitting}
+              disabled={readOnly || isSubmitting || !user}
               className={`${
-                readOnly ? 'cursor-default' : 'cursor-pointer'
+                readOnly || !user ? 'cursor-default' : 'cursor-pointer'
               } text-gray-300 p-0.5 focus:outline-none transition-colors duration-200 ${
                 isSubmitting ? 'opacity-50' : ''
               }`}
-              onMouseEnter={() => !readOnly && setHoveredRating(star)}
-              onMouseLeave={() => !readOnly && setHoveredRating(0)}
+              onMouseEnter={() => !readOnly && user && setHoveredRating(star)}
+              onMouseLeave={() => !readOnly && user && setHoveredRating(0)}
               onClick={() => handleRatingSubmit(star)}
             >
               <Star
@@ -143,9 +147,14 @@ const ProjectRating = ({
           </span>
         )}
       </div>
-      {!readOnly && (
+      {!readOnly && user && (
         <p className="text-xs text-gray-500 mt-1">
           {rating > 0 ? 'Click to update your rating' : 'Click to rate this project'}
+        </p>
+      )}
+      {!user && (
+        <p className="text-xs text-gray-500 mt-1">
+          Sign in to rate this project
         </p>
       )}
     </div>
