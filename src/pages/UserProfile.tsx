@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Settings } from "lucide-react";
+import { Heart } from "lucide-react";
 import UserProfileForm from "@/components/UserProfileForm";
 import ProjectCard from "@/components/ProjectCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,8 +151,7 @@ const UserProfilePage = () => {
           </div>
           <TabsList className="mt-4 md:mt-0">
             <TabsTrigger value="settings" className="flex items-center">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+              Profile Settings
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex items-center">
               <Heart className="h-4 w-4 mr-2" />

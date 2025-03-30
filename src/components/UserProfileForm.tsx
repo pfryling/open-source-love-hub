@@ -11,9 +11,11 @@ import { X } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { UserProfile } from "@/types/project";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UserProfileForm = () => {
   const { toast } = useToast();
+  const { user, updateUserDetails } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
     id: "",
     user_id: "",
@@ -66,6 +68,18 @@ const UserProfileForm = () => {
         // If profile exists, set it
         if (profileData) {
           setProfile(profileData as UserProfile);
+        } else if (user) {
+          // Initialize with user data if no profile exists yet
+          setProfile({
+            id: "",
+            user_id: user.id,
+            display_name: user.user_metadata?.name || "",
+            bio: "",
+            avatar_url: user.user_metadata?.avatar_url || "",
+            interests: [],
+            created_at: "",
+            updated_at: ""
+          });
         }
       } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -80,7 +94,7 @@ const UserProfileForm = () => {
     };
     
     fetchProfileAndTags();
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     // Filter tags based on search input
@@ -132,6 +146,10 @@ const UserProfileForm = () => {
     setIsSaving(true);
     
     try {
+      if (!user) {
+        throw new Error("You must be logged in to update your profile");
+      }
+      
       // Check if profile exists
       if (profile.id) {
         // Update existing profile
@@ -152,6 +170,7 @@ const UserProfileForm = () => {
         const { error } = await supabase
           .from('user_profiles')
           .insert({
+            user_id: user.id,
             display_name: profile.display_name,
             bio: profile.bio,
             avatar_url: profile.avatar_url,
@@ -160,6 +179,12 @@ const UserProfileForm = () => {
           
         if (error) throw error;
       }
+      
+      // Update user metadata in auth.users
+      await updateUserDetails({
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url
+      });
       
       toast({
         title: "Profile saved",

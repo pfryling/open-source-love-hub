@@ -1,155 +1,135 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { 
-  GitFork, 
-  Calendar, 
-  Users, 
-  Heart, 
-  Mail, 
-  MessageSquare, 
-  ExternalLink, 
-  ArrowLeft, 
-  Target, 
-  HandHelping,
-  Plus,
-  ThumbsUp,
-  Loader2,
-  UserCircle
-} from "lucide-react";
-import { mockProjects } from "@/data/mockProjects";
-import { ProjectFeature, Project } from "@/types/project";
-import { useVotes } from "@/utils/voteUtils";
-import { useToast } from "@/hooks/use-toast";
-import VoteCounter from "@/components/VoteCounter";
+import { useParams, useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Project, ProjectComment } from "@/types/project";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Edit, Calendar, Users, Star } from "lucide-react";
 import ProjectRating from "@/components/ProjectRating";
 import ProjectComments from "@/components/ProjectComments";
+import { useVotes } from "@/utils/voteUtils";
+import { format } from "date-fns";
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [features, setFeatures] = useState<ProjectFeature[]>([]);
-  const [showSuggestionForm, setShowSuggestionForm] = useState(false);
-  const { votes: projectVotes, remainingVotes, addVote, removeVote } = useVotes();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [project, setProject] = useState<Project | null>(null);
+  const [comments, setComments] = useState<ProjectComment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
-  const [averageRating, setAverageRating] = useState(0);
-  const [ratingCount, setRatingCount] = useState(0);
-  const [userRating, setUserRating] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [userHasRated, setUserHasRated] = useState(false);
+  const { votes, remainingVotes, addVote, removeVote } = useVotes();
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchProjectDetails = async () => {
+      if (!id) return;
+      
       try {
         setLoading(true);
         
-        // Fetch project from Supabase
+        // Fetch project details
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
           .eq('id', id)
           .single();
           
-        if (projectError) {
-          console.error('Error fetching project:', projectError);
-          // Try to fallback to mock data
-          const mockProject = mockProjects.find(p => p.id === id);
-          if (mockProject) {
-            setProject(mockProject);
-            setFeatures(mockProject.features || []);
-          } else {
-            throw projectError;
+        if (projectError) throw projectError;
+        
+        if (projectData) {
+          // Format the project data
+          const formattedProject: Project = {
+            id: projectData.id,
+            name: projectData.name,
+            shortDescription: projectData.short_description,
+            fullDescription: projectData.full_description,
+            lovableUrl: projectData.lovable_url,
+            contactEmail: projectData.contact_email,
+            contactDiscord: projectData.contact_discord,
+            goals: projectData.goals,
+            contributionAreas: projectData.contribution_areas,
+            tags: projectData.tags || [],
+            stars: projectData.stars || 0,
+            contributorsCount: projectData.contributors_count || 0,
+            lastUpdated: projectData.last_updated,
+            image_url: projectData.image_url,
+            is_demo: projectData.is_demo
+          };
+          
+          setProject(formattedProject);
+          
+          // Check if user is the owner
+          if (user && projectData.user_id === user.id) {
+            setIsOwner(true);
           }
-          return;
         }
         
-        // Format the project data to match our Project interface
-        const formattedProject: Project = {
-          id: projectData.id,
-          name: projectData.name,
-          shortDescription: projectData.short_description,
-          fullDescription: projectData.full_description,
-          lovableUrl: projectData.lovable_url,
-          contactEmail: projectData.contact_email,
-          contactDiscord: projectData.contact_discord,
-          goals: projectData.goals,
-          contributionAreas: projectData.contribution_areas,
-          tags: projectData.tags || [],
-          stars: projectData.stars,
-          contributorsCount: projectData.contributors_count,
-          lastUpdated: formatDate(projectData.last_updated),
-          is_demo: projectData.is_demo,
-          image_url: projectData.image_url,
-          rating_sum: projectData.rating_sum,
-          rating_count: projectData.rating_count
-        };
-        
-        setProject(formattedProject);
-        
-        // Set rating information
-        if (projectData.rating_count && projectData.rating_count > 0) {
-          const avgRating = projectData.rating_sum / projectData.rating_count;
-          setAverageRating(avgRating);
-          setRatingCount(projectData.rating_count);
+        // If user is logged in, check if project is favorited
+        if (user) {
+          const { data: favData } = await supabase
+            .from('user_favorites')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('project_id', id)
+            .maybeSingle();
+            
+          setIsFavorited(!!favData);
+          
+          // Check if user has rated the project
+          const { data: ratingData } = await supabase
+            .from('project_ratings')
+            .select('rating')
+            .eq('user_id', user.id)
+            .eq('project_id', id)
+            .maybeSingle();
+            
+          if (ratingData) {
+            setRating(ratingData.rating);
+            setUserHasRated(true);
+          }
         }
         
-        // Check if user has favorited this project
-        const { data: favoriteData, error: favoriteError } = await supabase
-          .from('user_favorites')
-          .select('id')
+        // Fetch comments
+        const { data: commentsData } = await supabase
+          .from('project_comments')
+          .select(`
+            id,
+            user_id,
+            comment,
+            created_at,
+            user_profiles:user_id (
+              display_name,
+              avatar_url
+            )
+          `)
           .eq('project_id', id)
-          .maybeSingle();
+          .order('created_at', { ascending: false });
           
-        if (!favoriteError && favoriteData) {
-          setIsFavorited(true);
-        }
-        
-        // Check if user has rated this project
-        const { data: ratingData, error: ratingError } = await supabase
-          .from('project_ratings')
-          .select('rating')
-          .eq('project_id', id)
-          .maybeSingle();
-          
-        if (!ratingError && ratingData) {
-          setUserRating(ratingData.rating);
-        }
-        
-        // Fetch project features
-        const { data: featureData, error: featureError } = await supabase
-          .from('project_features')
-          .select('*')
-          .eq('project_id', id);
-          
-        if (featureError) {
-          console.error('Error fetching features:', featureError);
-          setFeatures([]);
-        } else {
-          const formattedFeatures: ProjectFeature[] = featureData.map(feature => ({
-            id: feature.id,
-            name: feature.name,
-            description: feature.description,
-            votes: feature.votes || 0,
-            status: (feature.status as "planned" | "in-progress" | "completed" | "suggested") || "suggested"
+        if (commentsData) {
+          const formattedComments: ProjectComment[] = commentsData.map(item => ({
+            id: item.id,
+            project_id: id,
+            user_id: item.user_id,
+            comment: item.comment,
+            created_at: item.created_at,
+            user_name: item.user_profiles?.display_name || 'Anonymous'
           }));
           
-          setFeatures(formattedFeatures);
+          setComments(formattedComments);
         }
+        
       } catch (error) {
-        console.error('Error loading project details:', error);
+        console.error("Error fetching project details:", error);
         toast({
-          title: "Error Loading Project",
-          description: "Could not load the project details. Please try again later.",
+          title: "Error",
+          description: "Failed to load project details. Please try again.",
           variant: "destructive"
         });
       } finally {
@@ -157,58 +137,42 @@ const ProjectDetail = () => {
       }
     };
     
-    if (id) {
-      fetchProject();
+    fetchProjectDetails();
+  }, [id, user, toast]);
+  
+  const toggleFavorite = async () => {
+    if (!user) {
+      toast({
+        title: "Not logged in",
+        description: "You must be logged in to favorite projects.",
+        variant: "destructive"
+      });
+      return;
     }
-  }, [id, toast]);
-
-  // Helper function to format dates
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'Recently';
     
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 14) return '1 week ago';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    
-    return date.toLocaleDateString();
-  };
-
-  const form = useForm({
-    defaultValues: {
-      featureName: "",
-      featureDescription: "",
-      agreeToContribute: false
-    }
-  });
-
-  const handleToggleFavorite = async () => {
     try {
       if (isFavorited) {
         // Remove from favorites
         const { error } = await supabase
           .from('user_favorites')
           .delete()
-          .eq('project_id', project.id);
+          .eq('user_id', user.id)
+          .eq('project_id', id);
           
         if (error) throw error;
         
         setIsFavorited(false);
         toast({
           title: "Removed from favorites",
-          description: `${project.name} has been removed from your favorites.`,
+          description: "This project has been removed from your favorites.",
         });
       } else {
         // Add to favorites
         const { error } = await supabase
           .from('user_favorites')
           .insert({
-            project_id: project.id
+            user_id: user.id,
+            project_id: id
           });
           
         if (error) throw error;
@@ -216,143 +180,146 @@ const ProjectDetail = () => {
         setIsFavorited(true);
         toast({
           title: "Added to favorites",
-          description: `${project.name} has been added to your favorites.`,
+          description: "This project has been added to your favorites.",
         });
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
       toast({
         title: "Error",
-        description: "Failed to update favorites. Please try again.",
+        description: "Failed to toggle favorite status. Please try again.",
         variant: "destructive"
       });
     }
   };
   
-  const handleRatingChange = (newAverage: number, newCount: number) => {
-    setAverageRating(newAverage);
-    setRatingCount(newCount);
-  };
-  
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-12 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-lg text-gray-600">Loading project details...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!project) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Project Not Found</h1>
-        <p className="text-gray-600 mb-6">The project you're looking for doesn't exist or has been removed.</p>
-        <Link to="/projects">
-          <Button>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Projects
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
-  const handleVoteOnFeature = async (featureId: string, increment: boolean): Promise<boolean> => {
-    try {
-      // First update the UI optimistically
-      setFeatures(prev => 
-        prev.map(feature => 
-          feature.id === featureId 
-            ? { ...feature, votes: feature.votes + (increment ? 1 : -1) } 
-            : feature
-        )
-      );
-      
-      // Then update the database
-      let error;
-      
-      if (increment) {
-        const response = await supabase.rpc('increment', { x: 'votes' });
-        const newValue = response.data;
-        
-        if (newValue !== null) {
-          const updateResult = await supabase
-            .from('project_features')
-            .update({ votes: newValue })
-            .eq('id', featureId);
-            
-          error = updateResult.error;
-        } else {
-          error = response.error;
-        }
-      } else {
-        const response = await supabase.rpc('decrement', { x: 'votes' });
-        const newValue = response.data;
-        
-        if (newValue !== null) {
-          const updateResult = await supabase
-            .from('project_features')
-            .update({ votes: newValue })
-            .eq('id', featureId);
-            
-          error = updateResult.error;
-        } else {
-          error = response.error;
-        }
-      }
-      
-      if (error) {
-        throw error;
-      }
-      
+  const handleRating = async (newRating: number) => {
+    if (!user) {
       toast({
-        title: increment ? "Vote added" : "Vote removed",
-        description: `Your vote for this feature has been ${increment ? "added" : "removed"}.`,
+        title: "Not logged in",
+        description: "You must be logged in to rate projects.",
+        variant: "destructive"
       });
+      return;
+    }
+    
+    try {
+      if (userHasRated) {
+        // Update existing rating
+        const { error } = await supabase
+          .from('project_ratings')
+          .update({ rating: newRating })
+          .eq('user_id', user.id)
+          .eq('project_id', id);
+          
+        if (error) throw error;
+      } else {
+        // Create new rating
+        const { error } = await supabase
+          .from('project_ratings')
+          .insert({
+            user_id: user.id,
+            project_id: id,
+            rating: newRating
+          });
+          
+        if (error) throw error;
+        setUserHasRated(true);
+      }
       
-      return true;
+      setRating(newRating);
+      toast({
+        title: "Rating submitted",
+        description: "Thank you for rating this project!",
+      });
     } catch (error) {
-      console.error('Error updating feature vote:', error);
-      
-      // Revert the optimistic update
-      setFeatures(prev => 
-        prev.map(feature => 
-          feature.id === featureId 
-            ? { ...feature, votes: feature.votes + (increment ? -1 : 1) } 
-            : feature
-        )
-      );
-      
+      console.error("Error submitting rating:", error);
       toast({
         title: "Error",
-        description: "Failed to update vote. Please try again.",
+        description: "Failed to submit rating. Please try again.",
         variant: "destructive"
       });
-      
-      return false;
     }
   };
-
-  const handleVoteOnProject = (increment: boolean): boolean => {
-    const projectId = project?.id;
-    if (!projectId) return false;
+  
+  const addComment = async (comment: string) => {
+    if (!user) {
+      toast({
+        title: "Not logged in",
+        description: "You must be logged in to add comments.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    // Call the addVote or removeVote function synchronously
+    try {
+      const { data, error } = await supabase
+        .from('project_comments')
+        .insert({
+          project_id: id,
+          user_id: user.id,
+          comment: comment
+        })
+        .select(`
+          id,
+          user_id,
+          comment,
+          created_at,
+          user_profiles:user_id (
+            display_name,
+            avatar_url
+          )
+        `)
+        .single();
+        
+      if (error) throw error;
+      
+      const formattedComment: ProjectComment = {
+        id: data.id,
+        project_id: id,
+        user_id: user.id,
+        comment: comment,
+        created_at: data.created_at,
+        user_name: data.user_profiles?.display_name || 'Anonymous'
+      };
+      
+      setComments(prevComments => [formattedComment, ...prevComments]);
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added successfully.",
+      });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add comment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleVote = (projectId: string, increment: boolean) => {
+    if (!user) {
+      toast({
+        title: "Not logged in",
+        description: "You must be logged in to vote.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
       if (increment) {
         toast({
           title: "Vote Added",
-          description: `You've voted for ${project.name}. You have ${remainingVotes - 1} votes remaining.`,
+          description: `You've voted for this project. You have ${remainingVotes - 1} votes remaining.`,
         });
       } else {
         toast({
           title: "Vote Removed",
-          description: `You've removed your vote from ${project.name}. You now have ${remainingVotes + 1} votes remaining.`,
+          description: `You've removed your vote from this project. You now have ${remainingVotes + 1} votes remaining.`,
         });
       }
     } else if (increment && remainingVotes <= 0) {
@@ -365,367 +332,141 @@ const ProjectDetail = () => {
     
     return success;
   };
-
-  const onSubmitFeature = async (data: any) => {
-    try {
-      // Create new feature object
-      const newFeature: Omit<ProjectFeature, 'id'> & { project_id: string } = {
-        name: data.featureName,
-        description: data.featureDescription,
-        votes: 1, // Start with 1 vote (the suggester's vote)
-        status: "suggested" as const,
-        project_id: project.id
-      };
-      
-      // Insert the feature into Supabase
-      const { data: insertedFeature, error } = await supabase
-        .from('project_features')
-        .insert(newFeature)
-        .select()
-        .single();
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Add the feature to the local state
-      const formattedFeature: ProjectFeature = {
-        id: insertedFeature.id,
-        name: insertedFeature.name,
-        description: insertedFeature.description,
-        votes: insertedFeature.votes || 1,
-        status: (insertedFeature.status as "suggested" | "planned" | "in-progress" | "completed") || "suggested"
-      };
-      
-      setFeatures(prev => [...prev, formattedFeature]);
-      form.reset();
-      setShowSuggestionForm(false);
-      
-      toast({
-        title: "Feature Suggested",
-        description: "Your feature suggestion has been added with an initial vote from you.",
-      });
-    } catch (error) {
-      console.error('Error adding feature:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add feature suggestion. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
   
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!project) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-3xl font-bold mb-4">Project Not Found</h1>
+        <p className="text-gray-600 mb-6">The project you're looking for doesn't exist or has been removed.</p>
+        <Button onClick={() => navigate('/projects')}>View All Projects</Button>
+      </div>
+    );
+  }
+  
+  const handleEditProject = () => {
+    navigate(`/edit-project/${project.id}`);
+  };
+
   return (
-    <div className="container mx-auto px-4 md:px-6 py-12">
-      <Link to="/projects" className="inline-flex items-center text-gray-600 hover:text-primary mb-6">
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to Projects
-      </Link>
-      
+    <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <div className="mb-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+          <div className="flex justify-between items-start mb-4">
+            <div>
               <h1 className="text-3xl font-bold">{project.name}</h1>
-              <div className="flex items-center space-x-2 mt-2 md:mt-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={isFavorited ? "bg-red-50 text-red-500 border-red-200 hover:bg-red-100" : ""}
-                  onClick={handleToggleFavorite}
-                >
-                  <Heart className={`mr-2 h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : ""}`} />
-                  {isFavorited ? "Favorited" : "Add to Favorites"}
+              <p className="text-gray-600 mb-2">{project.shortDescription}</p>
+              <div className="flex flex-wrap gap-2">
+                {project.tags.map((tag, i) => (
+                  <Badge key={i} variant="secondary">{tag}</Badge>
+                ))}
+                {project.is_demo && (
+                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                    Demo Project
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              {isOwner && (
+                <Button onClick={handleEditProject} className="flex items-center">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Project
                 </Button>
-                <VoteCounter 
-                  projectId={project.id}
-                  voteCount={projectVotes[project.id] || 0}
-                  onVote={handleVoteOnProject}
-                  remainingVotes={remainingVotes}
-                  isDemo={project.is_demo}
-                />
-                <span className="text-lg font-medium ml-2">{project.stars || 0} stars</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mb-6">
-              {project.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-            
-            {project.image_url && (
-              <div className="mb-6 w-full h-64 overflow-hidden rounded-lg">
-                <img 
-                  src={project.image_url} 
-                  alt={project.name} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="flex items-center text-gray-600">
-                <Users className="h-5 w-5 mr-2 text-gray-500" />
-                <span>{project.contributorsCount} contributors</span>
-              </div>
-              <div className="flex items-center text-gray-600">
-                <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                <span>Updated {project.lastUpdated}</span>
-              </div>
-              <a 
-                href={project.lovableUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center text-primary hover:underline"
-              >
-                <ExternalLink className="h-5 w-5 mr-2" />
-                <span>Visit Lovable Project</span>
-              </a>
+              )}
             </div>
           </div>
           
-          <div className="space-y-8">
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold mb-4">About the Project</h2>
-                <div className="mb-4">
-                  <ProjectRating 
-                    projectId={project.id}
-                    initialRating={userRating}
-                    averageRating={averageRating}
-                    ratingCount={ratingCount}
-                    onRatingChange={handleRatingChange}
-                  />
-                </div>
-                <p className="text-gray-700 whitespace-pre-line">{project.fullDescription}</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center mb-4">
-                  <Target className="h-5 w-5 mr-2 text-primary" />
-                  <h2 className="text-xl font-semibold">Project Goals</h2>
-                </div>
-                <p className="text-gray-700 whitespace-pre-line">{project.goals}</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center mb-4">
-                  <HandHelping className="h-5 w-5 mr-2 text-primary" />
-                  <h2 className="text-xl font-semibold">How You Can Contribute</h2>
-                </div>
-                <p className="text-gray-700 whitespace-pre-line">{project.contributionAreas}</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="flex items-center">
-                    <ThumbsUp className="h-5 w-5 mr-2 text-primary" />
-                    Feature Requests
-                  </CardTitle>
-                  <Dialog open={showSuggestionForm} onOpenChange={setShowSuggestionForm}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Suggest Feature
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Suggest a New Feature</DialogTitle>
-                      </DialogHeader>
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmitFeature)} className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="featureName"
-                            rules={{ required: "Feature name is required" }}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Feature Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter feature name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="featureDescription"
-                            rules={{ required: "Description is required" }}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                  <Textarea 
-                                    placeholder="Describe what this feature would do and why it's valuable" 
-                                    {...field} 
-                                    rows={4}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="agreeToContribute"
-                            rules={{ required: "You must agree to potentially contribute" }}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>
-                                    I'm willing to contribute to this feature if it's accepted
-                                  </FormLabel>
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <div className="flex justify-end space-x-2">
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              onClick={() => setShowSuggestionForm(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button type="submit">Submit Feature</Button>
-                          </div>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {features.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Feature</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Votes</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {features.map((feature) => (
-                        <TableRow key={feature.id}>
-                          <TableCell className="font-medium">{feature.name}</TableCell>
-                          <TableCell>{feature.description}</TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              feature.status === 'completed' 
-                                ? 'default'
-                                : feature.status === 'in-progress'
-                                ? 'secondary'
-                                : 'outline'
-                            }>
-                              {feature.status.charAt(0).toUpperCase() + feature.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end">
-                              <VoteCounter
-                                projectId={`feature-${feature.id}`}
-                                voteCount={feature.votes}
-                                onVote={increment => handleVoteOnFeature(feature.id, increment)}
-                                remainingVotes={remainingVotes}
-                                isDemo={project.is_demo}
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No feature requests yet. Be the first to suggest one!
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <ProjectComments projectId={project.id} />
-          </div>
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>About this project</CardTitle>
+              <CardDescription>Learn more about {project.name}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700">{project.fullDescription}</p>
+              <Button variant="link" className="mt-4">
+                <a href={project.lovableUrl} target="_blank" rel="noopener noreferrer">
+                  Visit Lovable Project
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>Project Stats</CardTitle>
+              <CardDescription>Key metrics about the project</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-gray-500" />
+                <span>Last Updated: {format(new Date(project.lastUpdated), 'MMM dd, yyyy')}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-gray-500" />
+                <span>{project.contributorsCount} Contributors</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="lg:col-span-1">
-          <div className="sticky top-24">
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold mb-4">Get Involved</h2>
-                <a 
-                  href={project.lovableUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="w-full"
-                >
-                  <Button className="w-full mb-4">
-                    <GitFork className="mr-2 h-4 w-4" />
-                    Join This Project
-                  </Button>
-                </a>
-                <p className="text-sm text-gray-600 mb-4">
-                  Ready to contribute? Click the button above to visit the Lovable project page and get started.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                {project.contactEmail && (
-                  <div className="flex items-start mb-4">
-                    <Mail className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Email</h3>
-                      <a 
-                        href={`mailto:${project.contactEmail}`} 
-                        className="text-primary hover:underline break-all"
-                      >
-                        {project.contactEmail}
-                      </a>
-                    </div>
-                  </div>
-                )}
-                
-                {project.contactDiscord && (
-                  <div className="flex items-start">
-                    <MessageSquare className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Discord</h3>
-                      <p className="text-gray-700">{project.contactDiscord}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Support the Project</CardTitle>
+              <CardDescription>Show your appreciation and support</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full" onClick={toggleFavorite}>
+                {isFavorited ? "Unfavorite" : "Favorite"}
+              </Button>
+              <ProjectRating rating={rating} onRating={handleRating} userHasRated={userHasRated} />
+              <Button className="w-full" onClick={() => handleVote(project.id, true)} disabled={remainingVotes <= 0}>
+                <Star className="h-4 w-4 mr-2" />
+                Vote ({votes[project.id] || 0}) - {remainingVotes} votes left
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact</CardTitle>
+              <CardDescription>Get in touch with the project maintainers</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {project.contactEmail && (
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-5 w-5 text-gray-500" />
+                  <a href={`mailto:${project.contactEmail}`} className="text-primary hover:underline">
+                    {project.contactEmail}
+                  </a>
+                </div>
+              )}
+              {project.contactDiscord && (
+                <div className="flex items-center space-x-2">
+                  <Discord className="h-5 w-5 text-gray-500" />
+                  <span>{project.contactDiscord}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+      
+      <ProjectComments projectId={id} comments={comments} addComment={addComment} />
     </div>
   );
 };
 
 export default ProjectDetail;
+
+import { Mail, Discord } from "lucide-react";
