@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { UserCircle, Heart, Settings } from "lucide-react";
+import { Heart, Settings } from "lucide-react";
 import UserProfileForm from "@/components/UserProfileForm";
 import ProjectCard from "@/components/ProjectCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,10 +136,9 @@ const UserProfilePage = () => {
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="settings">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div className="flex items-center">
-            <UserCircle className="h-10 w-10 mr-3 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">
                 {profile?.display_name || "Your Profile"}
@@ -151,9 +149,9 @@ const UserProfilePage = () => {
             </div>
           </div>
           <TabsList className="mt-4 md:mt-0">
-            <TabsTrigger value="profile" className="flex items-center">
-              <UserCircle className="h-4 w-4 mr-2" />
-              Profile
+            <TabsTrigger value="settings" className="flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex items-center">
               <Heart className="h-4 w-4 mr-2" />
@@ -162,72 +160,11 @@ const UserProfilePage = () => {
                 {favoriteProjects.length}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
           </TabsList>
         </div>
         
-        <TabsContent value="profile" className="space-y-8">
-          {profile ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>About Me</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col md:flex-row gap-8">
-                    {profile.avatar_url && (
-                      <div className="w-32 h-32 rounded-full overflow-hidden flex-shrink-0">
-                        <img 
-                          src={profile.avatar_url} 
-                          alt={profile.display_name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="text-xl font-medium mb-2">{profile.display_name}</h3>
-                      <p className="text-gray-700 mb-4 whitespace-pre-line">{profile.bio}</p>
-                      {profile.interests && profile.interests.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-sm text-gray-600 mb-2">Interests:</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.interests.map(interest => (
-                              <Badge key={interest} variant="secondary">
-                                {interest}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => document.querySelector('[data-value="settings"]')?.dispatchEvent(new Event('click'))}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Edit Profile
-                </Button>
-              </div>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <UserCircle className="h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium mb-2">Create Your Profile</h3>
-                <p className="text-gray-600 mb-6 text-center max-w-md">
-                  Set up your profile to personalize your experience and connect with like-minded contributors.
-                </p>
-                <Button onClick={() => document.querySelector('[data-value="settings"]')?.dispatchEvent(new Event('click'))}>
-                  Create Profile
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+        <TabsContent value="settings">
+          <UserProfileForm />
         </TabsContent>
         
         <TabsContent value="favorites">
@@ -258,10 +195,6 @@ const UserProfilePage = () => {
               ))}
             </div>
           )}
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          <UserProfileForm />
         </TabsContent>
       </Tabs>
     </div>

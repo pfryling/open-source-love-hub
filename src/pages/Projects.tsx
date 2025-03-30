@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,21 +10,89 @@ import ProjectCard from "@/components/ProjectCard";
 import { mockProjects } from "@/data/mockProjects";
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Project } from "@/types/project";
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
+  const [showDemo, setShowDemo] = useState(true);
+  const [showUserProjects, setShowUserProjects] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { votes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
   
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch real projects from Supabase
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*');
+          
+        if (error) throw error;
+        
+        // Format the real projects
+        const formattedProjects = data.map(project => ({
+          id: project.id,
+          name: project.name,
+          shortDescription: project.short_description,
+          fullDescription: project.full_description,
+          lovableUrl: project.lovable_url,
+          contactEmail: project.contact_email,
+          contactDiscord: project.contact_discord,
+          goals: project.goals,
+          contributionAreas: project.contribution_areas,
+          tags: project.tags || [],
+          stars: project.stars || 0,
+          contributorsCount: project.contributors_count || 0,
+          lastUpdated: new Date(project.last_updated).toLocaleDateString(),
+          image_url: project.image_url,
+          is_demo: project.is_demo
+        }));
+        
+        // Combine with mock projects (which should all be marked as demo)
+        const allProjects = [
+          ...formattedProjects,
+          ...mockProjects.map(project => ({
+            ...project,
+            is_demo: true
+          }))
+        ];
+        
+        setProjects(allProjects);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        
+        // Fallback to mock projects if fetch fails
+        setProjects(mockProjects.map(project => ({
+          ...project,
+          is_demo: true
+        })));
+        
+        toast({
+          title: "Error",
+          description: "Failed to load all projects. Showing demo projects only.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProjects();
+  }, [toast]);
+  
   // Extract unique tags from all projects
   const allTags = Array.from(
-    new Set(mockProjects.flatMap(project => project.tags))
+    new Set(projects.flatMap(project => project.tags))
   ).sort();
   
-  // Filter projects based on search query and selected tags
-  const filteredProjects = mockProjects.filter(project => {
+  // Filter projects based on search query, selected tags, and project type
+  const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       project.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
@@ -33,7 +101,11 @@ const Projects = () => {
       selectedTags.length === 0 || 
       selectedTags.every(tag => project.tags.includes(tag));
     
-    return matchesSearch && matchesTags;
+    const matchesProjectType = 
+      (project.is_demo && showDemo) || 
+      (!project.is_demo && showUserProjects);
+    
+    return matchesSearch && matchesTags && matchesProjectType;
   });
   
   // Sort projects based on selected sort method
@@ -60,7 +132,7 @@ const Projects = () => {
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
-      const project = mockProjects.find(p => p.id === projectId);
+      const project = projects.find(p => p.id === projectId);
       if (increment) {
         toast({
           title: "Vote Added",
@@ -83,13 +155,23 @@ const Projects = () => {
     return success;
   };
   
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Explore Projects</h1>
           <p className="text-gray-600">
-            Find open source Lovable projects to contribute to
+            Find Lovable projects to contribute to
           </p>
         </div>
         <Link to="/add-project" className="mt-4 md:mt-0">
@@ -125,31 +207,55 @@ const Projects = () => {
         </div>
       </div>
       
-      <div className="mb-8">
-        <div className="flex items-center mb-3">
-          <Filter className="h-4 w-4 mr-2 text-gray-500" />
-          <span className="font-medium">Filter by tags:</span>
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="w-full md:w-2/3">
+          <div className="flex items-center mb-3">
+            <Filter className="h-4 w-4 mr-2 text-gray-500" />
+            <span className="font-medium">Filter by tags:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map(tag => (
+              <Badge
+                key={tag}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+              </Badge>
+            ))}
+            {selectedTags.length > 0 && (
+              <Button 
+                variant="link" 
+                className="text-sm text-gray-500 px-2"
+                onClick={() => setSelectedTags([])}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {allTags.map(tag => (
+        
+        <div className="w-full md:w-1/3">
+          <div className="flex items-center mb-3">
+            <span className="font-medium">Project type:</span>
+          </div>
+          <div className="flex gap-2">
             <Badge
-              key={tag}
-              variant={selectedTags.includes(tag) ? "default" : "outline"}
+              variant={showDemo ? "default" : "outline"}
               className="cursor-pointer"
-              onClick={() => toggleTag(tag)}
+              onClick={() => setShowDemo(!showDemo)}
             >
-              {tag}
+              Demo Projects
             </Badge>
-          ))}
-          {selectedTags.length > 0 && (
-            <Button 
-              variant="link" 
-              className="text-sm text-gray-500 px-2"
-              onClick={() => setSelectedTags([])}
+            <Badge
+              variant={showUserProjects ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setShowUserProjects(!showUserProjects)}
             >
-              Clear filters
-            </Button>
-          )}
+              User Projects
+            </Badge>
+          </div>
         </div>
       </div>
       
@@ -164,9 +270,11 @@ const Projects = () => {
             onClick={() => {
               setSearchQuery("");
               setSelectedTags([]);
+              setShowDemo(true);
+              setShowUserProjects(true);
             }}
           >
-            Clear search & filters
+            Clear all filters
           </Button>
         </div>
       ) : (

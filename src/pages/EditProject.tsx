@@ -107,7 +107,8 @@ const EditProject = () => {
           contactDiscord: project.contactDiscord || "",
           goals: project.goals || "",
           contributionAreas: project.contributionAreas || "",
-          tags: project.tags.join(", ")
+          tags: project.tags.join(", "),
+          image_url: project.image_url
         }}
       />
     </div>

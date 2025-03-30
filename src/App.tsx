@@ -17,7 +17,6 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { WaitlistProvider } from "./contexts/WaitlistContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ThemeProvider } from "./components/ui/use-theme";
 import Auth from "./pages/Auth";
 import UserProfile from "./pages/UserProfile";
 import EditProject from "./pages/EditProject";
@@ -27,36 +26,34 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider defaultTheme="light">
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
-          <WaitlistProvider>
-            <BrowserRouter>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <main className="flex-grow">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/projects/:id" element={<ProjectDetail />} />
-                    <Route path="/add-project" element={<AddProject />} />
-                    <Route path="/edit-project/:id" element={<EditProject />} />
-                    <Route path="/my-projects" element={<MyProjects />} />
-                    <Route path="/profile" element={<UserProfile />} />
-                    <Route path="/verify" element={<Verify />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/privacy" element={<PrivacyPolicy />} />
-                    <Route path="/terms" element={<TermsOfService />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
-            </BrowserRouter>
-          </WaitlistProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <Toaster />
+      <Sonner />
+      <AuthProvider>
+        <WaitlistProvider>
+          <BrowserRouter>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/projects" element={<Projects />} />
+                  <Route path="/projects/:id" element={<ProjectDetail />} />
+                  <Route path="/add-project" element={<AddProject />} />
+                  <Route path="/edit-project/:id" element={<EditProject />} />
+                  <Route path="/my-projects" element={<MyProjects />} />
+                  <Route path="/profile" element={<UserProfile />} />
+                  <Route path="/verify" element={<Verify />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </WaitlistProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

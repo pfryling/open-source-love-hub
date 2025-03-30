@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -24,7 +23,7 @@ interface ProjectFormProps {
   isSubmitting?: boolean;
   editMode?: boolean;
   projectId?: string;
-  initialData?: Partial<ProjectFormData>;
+  initialData?: Partial<ProjectFormData> & { image_url?: string };
 }
 
 const ProjectForm = ({ 

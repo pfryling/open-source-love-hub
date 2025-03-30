@@ -12,19 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, Github, UserCircle } from "lucide-react";
-import { useTheme } from "@/components/ui/use-theme";
+import { Heart, UserCircle } from "lucide-react";
 
 const Navbar = () => {
-  const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { pathname: pathName } = useLocation();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <div className="bg-background border-b">
@@ -55,7 +48,6 @@ const Navbar = () => {
               My Projects
             </Link>
           )}
-          {/* Add this link right before or after the My Projects link */}
           <Link
             to="/profile"
             className={`${
@@ -67,26 +59,8 @@ const Navbar = () => {
             <UserCircle className="h-4 w-4 mr-2" />
             Profile
           </Link>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() =>
-              setTheme(theme === "light" ? "dark" : "light")
-            }
-          >
-            {mounted && (
-              <Moon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            )}
-            {mounted && (
-              <Sun className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <Button variant="ghost" asChild>
-            <a href="https://github.com/joshencoder/lovable-hub" target="_blank" rel="noopener noreferrer">
-              <Github className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">GitHub</span>
-            </a>
+          <Button variant="ghost" size="icon" className="text-pink-500">
+            <Heart className="h-5 w-5 fill-pink-500" />
           </Button>
           {user ? (
             <DropdownMenu>
