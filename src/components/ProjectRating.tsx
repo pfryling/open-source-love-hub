@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,12 +28,22 @@ const ProjectRating = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Calculate the display value for stars
   const displayValue = hoveredRating > 0 ? hoveredRating : rating;
   
   const handleRatingSubmit = async (newRating: number) => {
-    if (readOnly || !user) return;
+    if (readOnly) return;
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to rate projects.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
     if (isSubmitting) return;
     
     setIsSubmitting(true);
@@ -112,9 +123,9 @@ const ProjectRating = ({
             <button
               key={star}
               type="button"
-              disabled={readOnly || isSubmitting || !user}
+              disabled={readOnly || isSubmitting}
               className={`${
-                readOnly || !user ? 'cursor-default' : 'cursor-pointer'
+                readOnly ? 'cursor-default' : 'cursor-pointer'
               } text-gray-300 p-0.5 focus:outline-none transition-colors duration-200 ${
                 isSubmitting ? 'opacity-50' : ''
               }`}

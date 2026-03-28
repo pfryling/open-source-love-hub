@@ -2,6 +2,8 @@
 
 A community platform for discovering, sharing, and contributing to open source projects built with [Lovable](https://lovable.dev). Connect with passionate developers, showcase your work, and find projects worth contributing to.
 
+**Live app:** [open-source-love-hub.lovable.app](https://open-source-love-hub.lovable.app)
+
 ## Features
 
 - **Browse Projects** — Explore open source Lovable projects with tags, contributor counts, and update dates
@@ -71,6 +73,8 @@ npm run dev        # Start development server (hot reload)
 npm run build      # Production build
 npm run preview    # Preview production build locally
 npm run lint       # Run ESLint
+npm run test       # Run test suite (Vitest)
+npm run test:coverage  # Run tests with coverage report
 ```
 
 ## Project Structure
@@ -138,7 +142,6 @@ For custom domain setup, see the [Lovable custom domains guide](https://docs.lov
 
 ## Known Limitations
 
-- **Votes are stored in `localStorage`** — they do not sync across devices or browsers
 - Mobile hamburger menu is not yet implemented
 - Image uploads require Supabase Storage to be configured
 
