@@ -38,6 +38,27 @@ export type Database = {
         }
         Relationships: []
       }
+      oshub_daily_bonus: {
+        Row: {
+          claimed_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_date: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          claimed_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       oshub_project_comments: {
         Row: {
           comment: string
@@ -268,6 +289,33 @@ export type Database = {
           interests?: string[] | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      oshub_user_votes: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          updated_at: string
+          user_id: string
+          vote_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          updated_at?: string
+          user_id: string
+          vote_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+          vote_count?: number
         }
         Relationships: []
       }
