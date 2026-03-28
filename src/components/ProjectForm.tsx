@@ -329,6 +329,19 @@ const ProjectForm = ({
             {errors.lovableUrl && <p className="text-red-500 text-sm">{errors.lovableUrl}</p>}
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="github_url" className="text-base">
+              GitHub Repository URL
+            </Label>
+            <Input
+              id="github_url"
+              name="github_url"
+              value={formData.github_url || ""}
+              onChange={handleChange}
+              placeholder="https://github.com/username/repo"
+            />
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="contactEmail" className="text-base">
