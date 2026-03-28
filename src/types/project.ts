@@ -18,6 +18,7 @@ export interface Project {
   image_url?: string;
   rating_sum?: number;
   rating_count?: number;
+  github_url?: string;
 }
 
 export interface ProjectFeature {
@@ -39,6 +40,7 @@ export interface ProjectFormData {
   contributionAreas: string;
   tags: string;
   image?: File;
+  github_url?: string;
 }
 
 export interface FeatureVotes {
