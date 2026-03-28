@@ -1,30 +1,59 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { PlusCircle, AlertCircle } from "lucide-react";
-import { useWaitlist } from "@/contexts/WaitlistContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
 
 const MyProjects = () => {
   const { toast } = useToast();
-  const { getUserProjects } = useWaitlist();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const userProjects = await getUserProjects();
-        setProjects(userProjects);
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        const formatted = (data || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          shortDescription: p.short_description,
+          fullDescription: p.full_description,
+          lovableUrl: p.lovable_url,
+          contactEmail: p.contact_email,
+          contactDiscord: p.contact_discord,
+          goals: p.goals,
+          contributionAreas: p.contribution_areas,
+          tags: p.tags || [],
+          stars: p.stars || 0,
+          contributorsCount: p.contributors_count || 0,
+          lastUpdated: p.last_updated,
+          image_url: p.image_url,
+          is_demo: p.is_demo,
+        }));
+        setProjects(formatted);
       } catch (error) {
         console.error("Error fetching projects:", error);
         toast({
           title: "Error",
-          description: "Failed to load projects. Please try again.",
+          description: "Failed to load your projects. Please try again.",
           variant: "destructive"
         });
       } finally {
@@ -33,7 +62,7 @@ const MyProjects = () => {
     };
 
     fetchProjects();
-  }, [getUserProjects, toast]);
+  }, [user, toast]);
 
   if (isLoading) {
     return (
@@ -47,9 +76,9 @@ const MyProjects = () => {
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-gray-600 mt-2">
-            Manage open source projects
+          <h1 className="text-3xl font-bold">My Projects</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage your open source projects
           </p>
         </div>
         <Button className="mt-4 md:mt-0" onClick={() => navigate("/add-project")}>
@@ -65,7 +94,7 @@ const MyProjects = () => {
               <AlertCircle className="h-16 w-16 text-muted-foreground" />
               <h3 className="text-xl font-medium">No Projects Yet</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                There aren't any projects yet. Add your first project to showcase it to the community!
+                You haven't created any projects yet. Add your first project to showcase it to the community!
               </p>
               <Button onClick={() => navigate("/add-project")}>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -95,7 +124,7 @@ const MyProjects = () => {
                     </span>
                   ))}
                   {project.tags.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
                       +{project.tags.length - 3} more
                     </span>
                   )}
