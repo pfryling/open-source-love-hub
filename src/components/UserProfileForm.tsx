@@ -38,8 +38,8 @@ const UserProfileForm = () => {
         setIsLoading(true);
         
         // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles')
+        const { data: profileData, error: profileError } = await (supabase
+          .from('oshub_user_profiles') as any)
           .select('*')
           .maybeSingle();
           
@@ -49,8 +49,8 @@ const UserProfileForm = () => {
         }
         
         // Fetch all unique tags from projects
-        const { data: projectData, error: projectError } = await supabase
-          .from('projects')
+        const { data: projectData, error: projectError } = await (supabase
+          .from('oshub_projects') as any)
           .select('tags');
           
         if (projectError) throw projectError;
@@ -153,8 +153,8 @@ const UserProfileForm = () => {
       // Check if profile exists
       if (profile.id) {
         // Update existing profile
-        const { error } = await supabase
-          .from('user_profiles')
+        const { error } = await (supabase
+          .from('oshub_user_profiles') as any)
           .update({
             display_name: profile.display_name,
             bio: profile.bio,
@@ -167,8 +167,8 @@ const UserProfileForm = () => {
         if (error) throw error;
       } else {
         // Create new profile
-        const { error } = await supabase
-          .from('user_profiles')
+        const { error } = await (supabase
+          .from('oshub_user_profiles') as any)
           .insert({
             user_id: user.id,
             display_name: profile.display_name,

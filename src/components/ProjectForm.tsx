@@ -78,8 +78,8 @@ const ProjectForm = ({
           }
           
           // If not found or empty, try direct Supabase fetch
-          const { data, error } = await supabase
-            .from('projects')
+          const { data, error } = await (supabase
+            .from('oshub_projects') as any)
             .select('*')
             .eq('id', projectId)
             .single();

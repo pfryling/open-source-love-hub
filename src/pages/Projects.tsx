@@ -29,8 +29,8 @@ const Projects = () => {
       try {
         setIsLoading(true);
         // Fetch real projects from Supabase
-        const { data, error } = await supabase
-          .from('projects')
+        const { data, error } = await (supabase
+          .from('oshub_projects') as any)
           .select('*');
           
         if (error) throw error;

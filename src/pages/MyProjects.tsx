@@ -24,8 +24,8 @@ const MyProjects = () => {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('projects')
+        const { data, error } = await (supabase
+          .from('oshub_projects') as any)
           .select('*')
           .eq('user_id', user.id);
 

@@ -36,8 +36,8 @@ const ProjectDetail = () => {
         setLoading(true);
         
         // Fetch project details
-        const { data: projectData, error: projectError } = await supabase
-          .from('projects')
+        const { data: projectData, error: projectError } = await (supabase
+          .from('oshub_projects') as any)
           .select('*')
           .eq('id', id)
           .single();
@@ -81,8 +81,8 @@ const ProjectDetail = () => {
         
         // If user is logged in, check if project is favorited
         if (user) {
-          const { data: favData } = await supabase
-            .from('user_favorites')
+          const { data: favData } = await (supabase
+            .from('oshub_user_favorites') as any)
             .select('id')
             .eq('user_id', user.id)
             .eq('project_id', id)
@@ -91,8 +91,8 @@ const ProjectDetail = () => {
           setIsFavorited(!!favData);
           
           // Check if user has rated the project
-          const { data: ratingData } = await supabase
-            .from('project_ratings')
+          const { data: ratingData } = await (supabase
+            .from('oshub_project_ratings') as any)
             .select('rating')
             .eq('user_id', user.id)
             .eq('project_id', id)
@@ -131,8 +131,8 @@ const ProjectDetail = () => {
     try {
       if (isFavorited) {
         // Remove from favorites
-        const { error } = await supabase
-          .from('user_favorites')
+        const { error } = await (supabase
+          .from('oshub_user_favorites') as any)
           .delete()
           .eq('user_id', user.id)
           .eq('project_id', id);
@@ -146,8 +146,8 @@ const ProjectDetail = () => {
         });
       } else {
         // Add to favorites
-        const { error } = await supabase
-          .from('user_favorites')
+        const { error } = await (supabase
+          .from('oshub_user_favorites') as any)
           .insert({
             user_id: user.id,
             project_id: id
@@ -184,8 +184,8 @@ const ProjectDetail = () => {
     try {
       if (userHasRated) {
         // Update existing rating
-        const { error } = await supabase
-          .from('project_ratings')
+        const { error } = await (supabase
+          .from('oshub_project_ratings') as any)
           .update({ rating: newRating })
           .eq('user_id', user.id)
           .eq('project_id', id);
@@ -193,8 +193,8 @@ const ProjectDetail = () => {
         if (error) throw error;
       } else {
         // Create new rating
-        const { error } = await supabase
-          .from('project_ratings')
+        const { error } = await (supabase
+          .from('oshub_project_ratings') as any)
           .insert({
             user_id: user.id,
             project_id: id,
