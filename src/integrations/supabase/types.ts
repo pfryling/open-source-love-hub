@@ -148,6 +148,7 @@ export type Database = {
           contributors_count: number | null
           created_at: string
           full_description: string
+          github_url: string | null
           goals: string | null
           id: string
           image_url: string | null
@@ -169,6 +170,7 @@ export type Database = {
           contributors_count?: number | null
           created_at?: string
           full_description?: string
+          github_url?: string | null
           goals?: string | null
           id?: string
           image_url?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           contributors_count?: number | null
           created_at?: string
           full_description?: string
+          github_url?: string | null
           goals?: string | null
           id?: string
           image_url?: string | null
