@@ -87,7 +87,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
             tags: tagsArray,
             contributors_count: 1,
             is_demo: false,
-            last_updated: new Date().toISOString()
+            last_updated: new Date().toISOString(),
+            github_url: (projectData as any).github_url || ''
           }
         ]);
       
@@ -143,7 +144,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
         goals: formData.goals,
         contribution_areas: formData.contributionAreas,
         tags: tagsArray,
-        image_url: formData.image_url
+        image_url: formData.image_url,
+        github_url: (formData as any).github_url || ''
       };
       
       // Update the project in Supabase

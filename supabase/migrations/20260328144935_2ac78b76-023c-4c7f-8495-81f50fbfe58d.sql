@@ -1,0 +1,1 @@
+ALTER TABLE public.oshub_projects ADD COLUMN IF NOT EXISTS github_url text DEFAULT ''::text;

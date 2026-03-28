@@ -89,7 +89,7 @@ const PrivacyPolicy = () => {
         <h2 className="text-2xl font-semibold mt-8 mb-4">8. Contact Us</h2>
         <p>
           If you have any questions about this privacy policy or our privacy practices, please contact 
-          us at: privacy@opensource-lovehub.com
+          us at: <a href="mailto:pfryling@gmail.com" className="text-primary hover:underline">pfryling@gmail.com</a>
         </p>
       </div>
     </div>
