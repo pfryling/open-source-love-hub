@@ -33,8 +33,7 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
 
   const joinWaitlist = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
-      // Simply save email to state and localStorage, always set as verified
-      localStorage.setItem("waitlist-email", email);
+      // Save email to state, always set as verified
       setEmail(email);
       setIsVerified(true);
 
