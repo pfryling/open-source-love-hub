@@ -38,6 +38,236 @@ export type Database = {
         }
         Relationships: []
       }
+      oshub_project_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oshub_project_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "oshub_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oshub_project_features: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          status: string | null
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          status?: string | null
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          status?: string | null
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oshub_project_features_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "oshub_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oshub_project_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          rating?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oshub_project_ratings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "oshub_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oshub_projects: {
+        Row: {
+          contact_discord: string | null
+          contact_email: string | null
+          contribution_areas: string | null
+          contributors_count: number | null
+          created_at: string
+          full_description: string
+          goals: string | null
+          id: string
+          image_url: string | null
+          is_demo: boolean | null
+          last_updated: string | null
+          lovable_url: string
+          name: string
+          rating_count: number | null
+          rating_sum: number | null
+          short_description: string
+          stars: number | null
+          tags: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          contact_discord?: string | null
+          contact_email?: string | null
+          contribution_areas?: string | null
+          contributors_count?: number | null
+          created_at?: string
+          full_description?: string
+          goals?: string | null
+          id?: string
+          image_url?: string | null
+          is_demo?: boolean | null
+          last_updated?: string | null
+          lovable_url?: string
+          name: string
+          rating_count?: number | null
+          rating_sum?: number | null
+          short_description?: string
+          stars?: number | null
+          tags?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          contact_discord?: string | null
+          contact_email?: string | null
+          contribution_areas?: string | null
+          contributors_count?: number | null
+          created_at?: string
+          full_description?: string
+          goals?: string | null
+          id?: string
+          image_url?: string | null
+          is_demo?: boolean | null
+          last_updated?: string | null
+          lovable_url?: string
+          name?: string
+          rating_count?: number | null
+          rating_sum?: number | null
+          short_description?: string
+          stars?: number | null
+          tags?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      oshub_user_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oshub_user_favorites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "oshub_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oshub_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          interests: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          interests?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          interests?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
