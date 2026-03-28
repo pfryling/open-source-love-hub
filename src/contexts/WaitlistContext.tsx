@@ -72,8 +72,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       const tagsArray = projectData.tags.split(',').map(tag => tag.trim());
       
       // Insert the project into the database without requiring a waitlist user_id
-      const { data, error } = await supabase
-        .from('projects')
+      const { data, error } = await (supabase
+        .from('oshub_projects') as any)
         .insert([
           {
             name: projectData.name,
@@ -111,8 +111,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
   const getUserProjects = async (): Promise<any[]> => {
     try {
       // Get all projects (no user filtering)
-      const { data, error } = await supabase
-        .from('projects')
+      const { data, error } = await (supabase
+        .from('oshub_projects') as any)
         .select('*');
       
       if (error) throw error;
@@ -147,8 +147,8 @@ export const WaitlistProvider = ({ children }: { children: ReactNode }) => {
       };
       
       // Update the project in Supabase
-      const { error } = await supabase
-        .from('projects')
+      const { error } = await (supabase
+        .from('oshub_projects') as any)
         .update(projectData)
         .eq('id', projectId);
       
