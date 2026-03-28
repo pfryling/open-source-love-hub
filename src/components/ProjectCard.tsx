@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { CalendarDays, GitFork, Heart, Info, Users } from "lucide-react";
 import { Project } from "@/types/project";
 import VoteCounter from "@/components/VoteCounter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Tooltip,
@@ -34,8 +35,20 @@ const ProjectCard = ({
   const [favorited, setFavorited] = useState(isFavorited);
   const [isToggling, setIsToggling] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleToggleFavorite = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to save favorites.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     if (isToggling) return;
     
     setIsToggling(true);

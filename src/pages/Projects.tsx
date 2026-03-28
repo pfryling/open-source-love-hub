@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import ProjectCard from "@/components/ProjectCard";
 import { mockProjects } from "@/data/mockProjects"; // fallback only
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
 
@@ -23,6 +24,8 @@ const Projects = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { votes, remainingVotes, addVote, removeVote } = useVotes();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const fetchProjects = async () => {
@@ -120,6 +123,16 @@ const Projects = () => {
   };
   
   const handleVote = (projectId: string, increment: boolean) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to vote for projects.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return false;
+    }
+
     const success = increment ? addVote(projectId) : removeVote(projectId);
     
     if (success) {
