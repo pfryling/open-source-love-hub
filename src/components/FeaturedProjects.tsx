@@ -118,7 +118,7 @@ const FeaturedProjects = () => {
     } else if (increment && remainingVotes <= 0) {
       toast({
         title: "No Votes Remaining",
-        description: "You've used all your available votes. Remove votes from other projects to vote again.",
+        description: "Claim your daily bonus votes or remove votes from other projects to vote again.",
         variant: "destructive"
       });
     }

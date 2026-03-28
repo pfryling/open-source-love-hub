@@ -8,7 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { MAX_VOTES } from '@/utils/voteUtils';
 
 interface VoteCounterProps {
   projectId: string;
@@ -26,8 +25,6 @@ const VoteCounter = ({
   isDemo = false
 }: VoteCounterProps) => {
   const [animateCount, setAnimateCount] = useState(false);
-  // Everyone is authenticated now
-  const isAuthenticated = true;
 
   const handleVote = async (increment: boolean) => {
     const success = await Promise.resolve(onVote(increment));
@@ -76,7 +73,7 @@ const VoteCounter = ({
             {isDemo ? (
               <p>Demo project votes don't count against your limit</p>
             ) : (
-              <p>You have {remainingVotes} out of {MAX_VOTES} votes remaining</p>
+              <p>{remainingVotes} votes remaining. Claim daily bonus for more!</p>
             )}
           </TooltipContent>
         </Tooltip>
