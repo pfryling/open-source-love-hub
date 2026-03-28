@@ -47,7 +47,8 @@ const ProjectForm = ({
     goals: "",
     contributionAreas: "",
     tags: "",
-    image_url: ""
+    image_url: "",
+    github_url: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,7 +73,8 @@ const ProjectForm = ({
               goals: project.goals || "",
               contributionAreas: project.contributionAreas || "",
               tags: project.tags?.join(", ") || "",
-              image_url: project.image_url || ""
+              image_url: project.image_url || "",
+              github_url: project.github_url || ""
             });
             return;
           }
@@ -97,7 +99,8 @@ const ProjectForm = ({
               goals: data.goals || "",
               contributionAreas: data.contribution_areas || "",
               tags: data.tags?.join(", ") || "",
-              image_url: data.image_url || ""
+              image_url: data.image_url || "",
+              github_url: data.github_url || ""
             });
           }
         } catch (error) {

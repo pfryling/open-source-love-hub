@@ -7,7 +7,7 @@ import { Project, ProjectComment } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Edit, Calendar, Users, Star, Mail, MessageSquare, Link as LinkIcon } from "lucide-react";
+import { Heart, Edit, Calendar, Users, Star, Mail, MessageSquare, Link as LinkIcon, Github } from "lucide-react";
 import ProjectRating from "@/components/ProjectRating";
 import ProjectComments from "@/components/ProjectComments";
 import { useVotes } from "@/utils/voteUtils";
@@ -63,7 +63,8 @@ const ProjectDetail = () => {
             image_url: projectData.image_url,
             is_demo: projectData.is_demo,
             rating_sum: projectData.rating_sum || 0,
-            rating_count: projectData.rating_count || 0
+            rating_count: projectData.rating_count || 0,
+            github_url: projectData.github_url
           };
           
           setProject(formattedProject);
@@ -333,6 +334,15 @@ const ProjectDetail = () => {
                      className="flex items-center">
                     <LinkIcon className="h-4 w-4 mr-2" />
                     Visit Lovable Project
+                  </a>
+                </Button>
+              )}
+              {project.github_url && (
+                <Button variant="link" className="mt-4 p-0 ml-4">
+                  <a href={project.github_url} target="_blank" rel="noopener noreferrer" 
+                     className="flex items-center">
+                    <Github className="h-4 w-4 mr-2" />
+                    View on GitHub
                   </a>
                 </Button>
               )}
