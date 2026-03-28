@@ -63,6 +63,16 @@ const Footer = () => {
                 </a>
               </li>
               <li>
+                <a 
+                  href="https://github.com/pfryling" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  GitHub
+                </a>
+              </li>
+              <li>
                 <Link to="/privacy" className="text-gray-600 hover:text-primary transition-colors">
                   Privacy Policy
                 </Link>
