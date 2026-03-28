@@ -20,8 +20,8 @@ const EditProject = () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('projects')
+        const { data, error } = await (supabase
+          .from('oshub_projects') as any)
           .select('*')
           .eq('id', id)
           .single();

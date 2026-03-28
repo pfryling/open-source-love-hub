@@ -39,8 +39,8 @@ const ProjectRating = ({
     
     try {
       // Check if user has already rated
-      const { data: existingRating, error: checkError } = await supabase
-        .from('project_ratings')
+      const { data: existingRating, error: checkError } = await (supabase
+        .from('oshub_project_ratings') as any)
         .select('id, rating')
         .eq('project_id', projectId)
         .eq('user_id', user.id)
@@ -54,16 +54,16 @@ const ProjectRating = ({
         // Update existing rating
         oldRating = existingRating.rating;
         
-        const { error: updateError } = await supabase
-          .from('project_ratings')
+        const { error: updateError } = await (supabase
+          .from('oshub_project_ratings') as any)
           .update({ rating: newRating })
           .eq('id', existingRating.id);
           
         if (updateError) throw updateError;
       } else {
         // Insert new rating
-        const { error: insertError } = await supabase
-          .from('project_ratings')
+        const { error: insertError } = await (supabase
+          .from('oshub_project_ratings') as any)
           .insert({
             project_id: projectId,
             user_id: user.id,
@@ -81,8 +81,8 @@ const ProjectRating = ({
       const newCount = existingRating ? ratingCount : ratingCount + 1;
       const newAverage = newSum / newCount;
       
-      const { error: projectUpdateError } = await supabase
-        .from('projects')
+      const { error: projectUpdateError } = await (supabase
+        .from('oshub_projects') as any)
         .update({
           rating_sum: newSum,
           rating_count: newCount

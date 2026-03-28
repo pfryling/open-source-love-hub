@@ -25,8 +25,8 @@ const UserProfilePage = () => {
         setIsLoading(true);
         
         // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles')
+        const { data: profileData, error: profileError } = await (supabase
+          .from('oshub_user_profiles') as any)
           .select('*')
           .maybeSingle();
           
@@ -40,8 +40,8 @@ const UserProfilePage = () => {
         }
         
         // Fetch favorite projects
-        const { data: favoritesData, error: favoritesError } = await supabase
-          .from('user_favorites')
+        const { data: favoritesData, error: favoritesError } = await (supabase
+          .from('oshub_user_favorites') as any)
           .select(`
             id,
             user_id,

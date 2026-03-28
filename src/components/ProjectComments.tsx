@@ -29,8 +29,8 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
         setIsLoading(true);
         
         // Fetch comments for the project
-        const { data, error } = await supabase
-          .from('project_comments')
+        const { data, error } = await (supabase
+          .from('oshub_project_comments') as any)
           .select('*')
           .eq('project_id', projectId)
           .order('created_at', { ascending: false });
@@ -42,8 +42,8 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
           const userIds = [...new Set(data.map(comment => comment.user_id).filter(Boolean))];
           
           if (userIds.length > 0) {
-            const { data: profiles, error: profilesError } = await supabase
-              .from('user_profiles')
+            const { data: profiles, error: profilesError } = await (supabase
+              .from('oshub_user_profiles') as any)
               .select('user_id, display_name')
               .in('user_id', userIds);
               
@@ -86,7 +86,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
     const commentSubscription = supabase
       .channel('public:project_comments')
       .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'project_comments', filter: `project_id=eq.${projectId}` },
+        { event: 'INSERT', schema: 'public', table: 'oshub_project_comments', filter: `project_id=eq.${projectId}` },
         async (payload) => {
           // Add the new comment to the list
           const newComment = payload.new as ProjectComment;
@@ -94,8 +94,8 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
           try {
             // Fetch the user profile for the new comment
             if (newComment.user_id) {
-              const { data: profile, error: profileError } = await supabase
-                .from('user_profiles')
+              const { data: profile, error: profileError } = await (supabase
+                .from('oshub_user_profiles') as any)
                 .select('display_name')
                 .eq('user_id', newComment.user_id)
                 .maybeSingle();
@@ -128,8 +128,8 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('project_comments')
+      const { error } = await (supabase
+        .from('oshub_project_comments') as any)
         .insert({
           project_id: projectId,
           user_id: user.id,

@@ -22,8 +22,8 @@ const FeaturedProjects = () => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('projects')
+        const { data, error } = await (supabase
+          .from('oshub_projects') as any)
           .select('*')
           .order('created_at', { ascending: false });
 

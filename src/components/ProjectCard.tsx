@@ -43,8 +43,8 @@ const ProjectCard = ({
     try {
       if (favorited) {
         // Remove from favorites
-        const { error } = await supabase
-          .from('user_favorites')
+        const { error } = await (supabase
+          .from('oshub_user_favorites') as any)
           .delete()
           .eq('project_id', project.id);
           
@@ -57,8 +57,8 @@ const ProjectCard = ({
         });
       } else {
         // Add to favorites
-        const { error } = await supabase
-          .from('user_favorites')
+        const { error } = await (supabase
+          .from('oshub_user_favorites') as any)
           .insert({
             project_id: project.id
           });
