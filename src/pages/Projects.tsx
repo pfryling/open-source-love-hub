@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, PlusCircle } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
-import { mockProjects } from "@/data/mockProjects";
+import { mockProjects } from "@/data/mockProjects"; // fallback only
 import { useVotes } from "@/utils/voteUtils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,16 +54,7 @@ const Projects = () => {
           is_demo: project.is_demo
         }));
         
-        // Combine with mock projects (which should all be marked as demo)
-        const allProjects = [
-          ...formattedProjects,
-          ...mockProjects.map(project => ({
-            ...project,
-            is_demo: true
-          }))
-        ];
-        
-        setProjects(allProjects);
+        setProjects(formattedProjects);
       } catch (error) {
         console.error("Error fetching projects:", error);
         

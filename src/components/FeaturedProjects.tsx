@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+
 import ProjectCard from "./ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,12 +52,9 @@ const FeaturedProjects = () => {
         setProjects(formattedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
-        // Fallback to mock data if fetch fails
-        toast({
-          title: "Failed to load projects",
-          description: "Using demo data instead. Please try again later.",
-          variant: "destructive"
-        });
+        // Fallback to mock data
+        const { mockProjects } = await import("@/data/mockProjects");
+        setProjects(mockProjects.map(p => ({ ...p, is_demo: true })));
       } finally {
         setLoading(false);
       }

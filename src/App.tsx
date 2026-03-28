@@ -20,6 +20,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Auth from "./pages/Auth";
 import UserProfile from "./pages/UserProfile";
 import EditProject from "./pages/EditProject";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -38,10 +39,10 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/projects/:id" element={<ProjectDetail />} />
-                  <Route path="/add-project" element={<AddProject />} />
-                  <Route path="/edit-project/:id" element={<EditProject />} />
-                  <Route path="/my-projects" element={<MyProjects />} />
-                  <Route path="/profile" element={<UserProfile />} />
+                  <Route path="/add-project" element={<ProtectedRoute><AddProject /></ProtectedRoute>} />
+                  <Route path="/edit-project/:id" element={<ProtectedRoute><EditProject /></ProtectedRoute>} />
+                  <Route path="/my-projects" element={<ProtectedRoute><MyProjects /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
                   <Route path="/verify" element={<Verify />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
