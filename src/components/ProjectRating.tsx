@@ -73,23 +73,12 @@ const ProjectRating = ({
         if (insertError) throw insertError;
       }
       
-      // Now update the project's rating summary
+      // Rating aggregates are now computed automatically by a database trigger
+      const newCount = existingRating ? ratingCount : ratingCount + 1;
       const newSum = existingRating
         ? averageRating * ratingCount - oldRating + newRating
         : averageRating * ratingCount + newRating;
-        
-      const newCount = existingRating ? ratingCount : ratingCount + 1;
-      const newAverage = newSum / newCount;
-      
-      const { error: projectUpdateError } = await (supabase
-        .from('oshub_projects') as any)
-        .update({
-          rating_sum: newSum,
-          rating_count: newCount
-        })
-        .eq('id', projectId);
-        
-      if (projectUpdateError) throw projectUpdateError;
+      const newAverage = newCount > 0 ? newSum / newCount : 0;
       
       // Update local state
       setRating(newRating);
