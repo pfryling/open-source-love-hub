@@ -47,7 +47,7 @@ const UserProfilePage = () => {
             user_id,
             project_id,
             created_at,
-            projects:project_id (*)
+            projects:project_id!oshub_user_favorites_project_id_fkey (*)
           `);
           
         if (favoritesError) throw favoritesError;
