@@ -1,0 +1,1 @@
+UPDATE public.oshub_projects SET contact_email = 'pfryling@gmail.com', github_url = 'https://github.com/pfryling/open-source-love-hub' WHERE name = 'Open Source Love Hub';
